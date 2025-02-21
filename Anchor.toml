@@ -16,3 +16,5 @@ wallet = "~/.config/solana/id.json"
 
 [scripts]
 test = "yarn jest"
+lint = "cargo fmt && cargo clippy"
+build = "anchor build && cp ./target/idl/*.json ./sdk/src/idl/ && cp ./target/types/*.ts ./sdk/src/types/"

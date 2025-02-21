@@ -1,0 +1,29 @@
+repos:
+  - repo: https://github.com/doublify/pre-commit-rust
+    rev: v1.0
+    hooks:
+      - id: fmt
+        name: Format Rust code
+        description: Format all Rust code using rustfmt
+        entry: cargo fmt --check
+        pass_filenames: false
+        language: system
+        files: \.rs$
+
+      - id: clippy
+        name: Lint Rust code
+        description: Lint all Rust code using clippy
+        entry: cargo clippy
+        args: ["--", "-D", "warnings", "-A", "unexpected_cfgs"]
+        pass_filenames: false
+        language: system
+        files: \.rs$
+
+  - repo: https://github.com/pre-commit/mirrors-prettier
+    rev: v3.1.0
+    hooks:
+      - id: prettier
+        name: Format TypeScript code
+        files: \.(ts|tsx|js|jsx)$
+        additional_dependencies:
+          - prettier@2.6.2
