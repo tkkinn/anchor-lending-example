@@ -1,9 +1,12 @@
+#[macro_use]
+// pub mod utils;
+pub mod protocol;
+// pub mod user;
+
+use crate::protocol::*;
 use anchor_lang::prelude::*;
 
-mod protocol;
-
-use protocol::*;
-
+// Program ID
 declare_id!("HKViZ7i7fEpfqcpCpDWAfmZpuVZ6WSRXST85nf1w227q");
 
 #[program]
@@ -22,27 +25,27 @@ pub mod anchor_lending_example {
         protocol::handle_update_authority(ctx)
     }
 
-    /// Initialize a new token group
+    /// Initialize a new pool
     /// Can only be called by the admin authority
-    pub fn initialize_token_group(ctx: Context<InitializeTokenGroup>) -> Result<()> {
-        protocol::handle_initialize_token_group(ctx)
+    pub fn initialize_pool(ctx: Context<InitializePool>) -> Result<()> {
+        protocol::handle_initialize_pool(ctx)
     }
 
-    /// Initialize configuration for a new token
+    /// Initialize configuration for a new bank
     /// Can only be called by the admin authority
-    pub fn initialize_token_config(
-        ctx: Context<InitializeTokenConfig>,
-        group_id: u8,
-    ) -> Result<()> {
-        protocol::handle_initialize_token_config(ctx, group_id)
+    pub fn initialize_bank(ctx: Context<InitializeBank>, group_id: u8) -> Result<()> {
+        protocol::handle_initialize_bank(ctx, group_id)
     }
 
-    /// Update the operational status of a token config
+    /// Update the operational status of a bank
     /// Can only be called by the admin authority
-    pub fn update_token_config_status(
-        ctx: Context<UpdateTokenConfigStatus>,
-        new_status: u8,
-    ) -> Result<()> {
-        protocol::handle_update_token_config_status(ctx, new_status)
+    pub fn update_bank_status(ctx: Context<UpdateBankStatus>, new_status: u8) -> Result<()> {
+        protocol::handle_update_bank_status(ctx, new_status)
     }
+
+    // /// Initialize a new user account with unique ID in a specific token group
+    // /// This creates a PDA account for the user that will hold their lending protocol state
+    // pub fn initialize_user(ctx: Context<InitializeUser>, group_id: u8, user_id: u16) -> Result<()> {
+    //     user::handle_initialize_user(ctx, group_id, user_id)
+    // }
 }

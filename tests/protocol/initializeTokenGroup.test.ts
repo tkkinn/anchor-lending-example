@@ -3,14 +3,14 @@ import {
   getAdminPublicKey,
   getInitializeIx,
   AdminAccount,
-  getInitializeTokenGroupIx,
+  getInitializePoolIx,
 } from "@/sdk";
 import * as anchor from "@coral-xyz/anchor";
 import { BankrunProvider } from "anchor-bankrun";
 import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
 import { PublicKey, Keypair, Connection } from "@solana/web3.js";
 
-describe("Initialize Token Group", () => {
+describe("Initialize Pool", () => {
   let context: ProgramTestContext;
   let client: BanksClient;
   let provider: BankrunProvider;
@@ -42,27 +42,27 @@ describe("Initialize Token Group", () => {
   });
 
   /**
-   * Test: Initialize Token Group Successfully
+   * Test: Initialize Pool Successfully
    * Flow:
-   * 1. Call initialize token group with valid authority
-   * 2. Verify admin account token_group_count increased
+   * 1. Call initialize pool with valid authority
+   * 2. Verify admin account pool_count increased
    * 3. Verify event emitted
-   * Expected: Token group should be initialized and count incremented
+   * Expected: Pool should be initialized and count incremented
    */
-  it("should initialize token group successfully", async () => {
+  it("should initialize pool successfully", async () => {
     // Get initial state
     const adminInfoBefore = await connection.getAccountInfo(adminKey);
     const adminBefore = AdminAccount.decode(adminInfoBefore.data);
-    const countBefore = adminBefore.tokenGroupCount;
+    const countBefore = adminBefore.poolCount;
 
-    // Initialize token group
-    const ix = await getInitializeTokenGroupIx(wallet.publicKey);
+    // Initialize pool
+    const ix = await getInitializePoolIx(wallet.publicKey);
     await sendTransaction([ix], connection, wallet);
 
     // Verify admin state updated
     const adminInfoAfter = await connection.getAccountInfo(adminKey);
     const adminAfter = AdminAccount.decode(adminInfoAfter.data);
-    expect(adminAfter.tokenGroupCount).toBe(countBefore + 1);
+    expect(adminAfter.poolCount).toBe(countBefore + 1);
 
     // Verify event - would need event listener setup
     // TODO: Add event verification once event testing utilities are available

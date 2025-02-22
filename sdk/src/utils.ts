@@ -1,3 +1,5 @@
+import { PublicKey } from "@solana/web3.js";
+
 /**
  * Converts a hexadecimal string to bytes32 format
  * Pads shorter hex strings with zeros on the left
@@ -24,3 +26,7 @@ export function hexToBytes32(hex: string): string {
   // Return with 0x prefix
   return "0x" + hex;
 }
+
+export const PROGRAM_ID = new PublicKey(
+  "HKViZ7i7fEpfqcpCpDWAfmZpuVZ6WSRXST85nf1w227q"
+);

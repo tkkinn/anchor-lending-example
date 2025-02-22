@@ -1,86 +1,82 @@
 import { PublicKey } from "@solana/web3.js";
+import { PROGRAM_ID } from "./utils";
 
-export const ADMIN_SEED = "admin";
-export const TOKEN_CONFIG_SEED = "token_config";
-
-/**
- * Derive the admin PDA address and bump
- * @param programId The program ID
- * @returns Tuple of [address, bump]
- */
-export function getAdminPublicKeyAndNonce(
-  programId: PublicKey
-): [PublicKey, number] {
-  return PublicKey.findProgramAddressSync([Buffer.from(ADMIN_SEED)], programId);
-}
+const TOKEN_ACCOUNT_SEED = "token_account";
+const BANK_SEED = "bank";
+const ADMIN_SEED = "admin";
 
 /**
  * Get the admin account public key
  * @param programId The program ID
  * @returns The admin account public key
  */
-export function getAdminPublicKey(programId: PublicKey): PublicKey {
-  return getAdminPublicKeyAndNonce(programId)[0];
+export function getAdminPublicKey(
+  programId: PublicKey = PROGRAM_ID
+): PublicKey {
+  return PublicKey.findProgramAddressSync(
+    [Buffer.from(ADMIN_SEED)],
+    programId
+  )[0];
 }
 
 /**
- * Derive the token config PDA address and bump
+ * Derive the bank PDA address and bump
  * @param mint The token mint address
  * @param groupId The token group ID
  * @param programId The program ID
  * @returns Tuple of [address, bump]
  */
-export function getTokenConfigPublicKeyAndNonce(
+export function getBankPublicKeyAndNonce(
   mint: PublicKey,
   groupId: number,
-  programId: PublicKey
+  programId: PublicKey = PROGRAM_ID
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from(TOKEN_CONFIG_SEED), mint.toBuffer(), Buffer.from([groupId])],
+    [Buffer.from(BANK_SEED), mint.toBuffer(), Buffer.from([groupId])],
     programId
   );
 }
 
 /**
- * Get the token config account public key
+ * Get the bank account public key
  * @param mint The token mint address
  * @param groupId The token group ID
  * @param programId The program ID
- * @returns The token config account public key
+ * @returns The bank account public key
  */
-export function getTokenConfigPublicKey(
+export function getBankPublicKey(
   mint: PublicKey,
   groupId: number,
-  programId: PublicKey
+  programId: PublicKey = PROGRAM_ID
 ): PublicKey {
-  return getTokenConfigPublicKeyAndNonce(mint, groupId, programId)[0];
+  return getBankPublicKeyAndNonce(mint, groupId, programId)[0];
 }
 
 /**
  * Derive the token account PDA address and bump
- * @param tokenConfig The token config account address
+ * @param bank The bank account address
  * @param programId The program ID
  * @returns Tuple of [address, bump]
  */
 export function getTokenAccountPublicKeyAndNonce(
-  tokenConfig: PublicKey,
-  programId: PublicKey
+  bank: PublicKey,
+  programId: PublicKey = PROGRAM_ID
 ): [PublicKey, number] {
   return PublicKey.findProgramAddressSync(
-    [Buffer.from("token_account"), tokenConfig.toBuffer()],
+    [Buffer.from(TOKEN_ACCOUNT_SEED), bank.toBuffer()],
     programId
   );
 }
 
 /**
  * Get the token account public key
- * @param tokenConfig The token config account address
+ * @param bank The bank account address
  * @param programId The program ID
  * @returns The token account public key
  */
 export function getTokenAccountPublicKey(
-  tokenConfig: PublicKey,
-  programId: PublicKey
+  bank: PublicKey,
+  programId: PublicKey = PROGRAM_ID
 ): PublicKey {
-  return getTokenAccountPublicKeyAndNonce(tokenConfig, programId)[0];
+  return getTokenAccountPublicKeyAndNonce(bank, programId)[0];
 }

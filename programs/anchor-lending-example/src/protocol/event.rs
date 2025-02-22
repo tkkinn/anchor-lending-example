@@ -22,31 +22,31 @@ pub struct AdminAuthorityUpdated {
     pub new_authority: Pubkey,
 }
 
-/// Event emitted when a new token group is initialized
+/// Event emitted when a new pool is initialized
 #[event]
-pub struct TokenGroupInitialized {
-    /// The group ID that was initialized  
+pub struct PoolInitialized {
+    /// The pool ID that was initialized  
     #[index]
-    pub group_id: u8,
+    pub pool_id: u8,
     /// The authority that initialized it
     pub authority: Pubkey,
 }
 
 #[event]
-pub struct TokenConfigInitialized {
+pub struct BankInitialized {
     pub mint: Pubkey,
     pub group_id: u8,
     pub status: u8,
     pub token_account: Pubkey,
 }
 
-/// Event emitted when token config status is updated
+/// Event emitted when bank status is updated
 #[event]
-pub struct TokenConfigStatusUpdated {
+pub struct BankStatusUpdated {
     /// The token mint address
     pub mint: Pubkey,
-    /// Previous token status
+    /// Previous bank status
     pub old_status: u8,
-    /// New token status
+    /// New bank status
     pub new_status: u8,
 }

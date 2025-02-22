@@ -47,7 +47,7 @@ describe("Protocol Admin Functions", () => {
       const admin = AdminAccount.decode(adminInfo.data);
 
       expect(admin.authority).toEqual(wallet.publicKey);
-      expect(admin.tokenGroupCount).toEqual(0);
+      expect(admin.poolCount).toEqual(0);
     });
 
     /**
@@ -86,7 +86,7 @@ describe("Protocol Admin Functions", () => {
       const admin = AdminAccount.decode(adminInfo.data);
 
       expect(admin.authority).toEqual(newAuthority.publicKey);
-      expect(admin.tokenGroupCount).toEqual(0);
+      expect(admin.poolCount).toEqual(0);
     });
   });
 });

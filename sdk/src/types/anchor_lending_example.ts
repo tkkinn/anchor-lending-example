@@ -48,12 +48,12 @@ export type AnchorLendingExample = {
       args: [];
     },
     {
-      name: "initializeTokenConfig";
+      name: "initializeBank";
       docs: [
-        "Initialize configuration for a new token",
+        "Initialize configuration for a new bank",
         "Can only be called by the admin authority"
       ];
-      discriminator: [60, 14, 114, 86, 25, 84, 93, 149];
+      discriminator: [217, 55, 77, 45, 245, 197, 75, 140];
       accounts: [
         {
           name: "admin";
@@ -68,8 +68,8 @@ export type AnchorLendingExample = {
           };
         },
         {
-          name: "tokenConfig";
-          docs: ["The token config account to initialize"];
+          name: "bank";
+          docs: ["The bank account to initialize"];
           writable: true;
         },
         {
@@ -78,7 +78,7 @@ export type AnchorLendingExample = {
         },
         {
           name: "tokenAccount";
-          docs: ["The token account owned by token config PDA"];
+          docs: ["The token account owned by bank PDA"];
           writable: true;
           pda: {
             seeds: [
@@ -102,14 +102,14 @@ export type AnchorLendingExample = {
               },
               {
                 kind: "account";
-                path: "tokenConfig";
+                path: "bank";
               }
             ];
           };
         },
         {
           name: "authority";
-          docs: ["The authority that must sign to initialize token config"];
+          docs: ["The authority that must sign to initialize bank"];
           writable: true;
           signer: true;
           relations: ["admin"];
@@ -131,12 +131,12 @@ export type AnchorLendingExample = {
       ];
     },
     {
-      name: "initializeTokenGroup";
+      name: "initializePool";
       docs: [
-        "Initialize a new token group",
+        "Initialize a new pool",
         "Can only be called by the admin authority"
       ];
-      discriminator: [87, 246, 48, 126, 123, 0, 229, 62];
+      discriminator: [95, 180, 10, 172, 84, 174, 232, 40];
       accounts: [
         {
           name: "admin";
@@ -195,12 +195,12 @@ export type AnchorLendingExample = {
       args: [];
     },
     {
-      name: "updateTokenConfigStatus";
+      name: "updateBankStatus";
       docs: [
-        "Update the operational status of a token config",
+        "Update the operational status of a bank",
         "Can only be called by the admin authority"
       ];
-      discriminator: [153, 159, 241, 140, 69, 10, 238, 253];
+      discriminator: [75, 255, 49, 191, 115, 239, 30, 148];
       accounts: [
         {
           name: "admin";
@@ -221,8 +221,8 @@ export type AnchorLendingExample = {
           relations: ["admin"];
         },
         {
-          name: "tokenConfig";
-          docs: ["The token config account to update"];
+          name: "bank";
+          docs: ["The bank account to update"];
           writable: true;
         }
       ];
@@ -240,8 +240,8 @@ export type AnchorLendingExample = {
       discriminator: [244, 158, 220, 65, 8, 73, 4, 65];
     },
     {
-      name: "tokenConfig";
-      discriminator: [92, 73, 255, 43, 107, 51, 117, 101];
+      name: "bank";
+      discriminator: [142, 49, 166, 242, 50, 66, 97, 188];
     }
   ];
   events: [
@@ -254,20 +254,20 @@ export type AnchorLendingExample = {
       discriminator: [237, 223, 71, 11, 140, 218, 196, 171];
     },
     {
-      name: "tokenConfigInitialized";
-      discriminator: [216, 229, 55, 155, 204, 69, 244, 40];
+      name: "bankInitialized";
+      discriminator: [12, 70, 239, 83, 166, 159, 112, 156];
     },
     {
-      name: "tokenConfigStatusUpdated";
-      discriminator: [87, 11, 11, 85, 138, 95, 183, 52];
+      name: "bankStatusUpdated";
+      discriminator: [20, 241, 184, 46, 202, 162, 62, 230];
     },
     {
-      name: "anchor_lending_example::protocol::event::TokenGroupInitialized";
-      discriminator: [131, 122, 251, 192, 58, 116, 250, 65];
+      name: "anchor_lending_example::protocol::event::PoolInitialized";
+      discriminator: [100, 118, 173, 87, 12, 198, 254, 229];
     },
     {
-      name: "anchor_lending_example::protocol::instructions::initialize_token_group::TokenGroupInitialized";
-      discriminator: [131, 122, 251, 192, 58, 116, 250, 65];
+      name: "anchor_lending_example::protocol::instructions::initialize_pool::PoolInitialized";
+      discriminator: [100, 118, 173, 87, 12, 198, 254, 229];
     }
   ];
   errors: [
@@ -304,8 +304,8 @@ export type AnchorLendingExample = {
             type: "pubkey";
           },
           {
-            name: "tokenGroupCount";
-            docs: ["Number of token groups that have been initialized"];
+            name: "poolCount";
+            docs: ["Number of pools that have been initialized"];
             type: "u8";
           }
         ];
@@ -355,8 +355,8 @@ export type AnchorLendingExample = {
       };
     },
     {
-      name: "tokenConfig";
-      docs: ["Token config account data"];
+      name: "bank";
+      docs: ["Bank account data"];
       serialization: "bytemuck";
       repr: {
         kind: "c";
@@ -370,8 +370,8 @@ export type AnchorLendingExample = {
             type: "pubkey";
           },
           {
-            name: "groupId";
-            docs: ["The token group ID"];
+            name: "poolId";
+            docs: ["The pool ID"];
             type: "u8";
           },
           {
@@ -388,7 +388,7 @@ export type AnchorLendingExample = {
       };
     },
     {
-      name: "tokenConfigInitialized";
+      name: "bankInitialized";
       type: {
         kind: "struct";
         fields: [
@@ -412,8 +412,8 @@ export type AnchorLendingExample = {
       };
     },
     {
-      name: "tokenConfigStatusUpdated";
-      docs: ["Event emitted when token config status is updated"];
+      name: "bankStatusUpdated";
+      docs: ["Event emitted when bank status is updated"];
       type: {
         kind: "struct";
         fields: [
@@ -424,26 +424,26 @@ export type AnchorLendingExample = {
           },
           {
             name: "oldStatus";
-            docs: ["Previous token status"];
+            docs: ["Previous bank status"];
             type: "u8";
           },
           {
             name: "newStatus";
-            docs: ["New token status"];
+            docs: ["New bank status"];
             type: "u8";
           }
         ];
       };
     },
     {
-      name: "anchor_lending_example::protocol::event::TokenGroupInitialized";
-      docs: ["Event emitted when a new token group is initialized"];
+      name: "anchor_lending_example::protocol::event::PoolInitialized";
+      docs: ["Event emitted when a new pool is initialized"];
       type: {
         kind: "struct";
         fields: [
           {
-            name: "groupId";
-            docs: ["The group ID that was initialized"];
+            name: "poolId";
+            docs: ["The pool ID that was initialized"];
             type: "u8";
           },
           {
@@ -455,12 +455,12 @@ export type AnchorLendingExample = {
       };
     },
     {
-      name: "anchor_lending_example::protocol::instructions::initialize_token_group::TokenGroupInitialized";
+      name: "anchor_lending_example::protocol::instructions::initialize_pool::PoolInitialized";
       type: {
         kind: "struct";
         fields: [
           {
-            name: "tokenGroupCount";
+            name: "poolCount";
             type: "u8";
           }
         ];

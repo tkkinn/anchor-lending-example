@@ -2,7 +2,7 @@ import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import * as idl from "../idl/anchor_lending_example.json";
 import { Program } from "@coral-xyz/anchor";
 import { AnchorLendingExample } from "../types/anchor_lending_example";
-import { getTokenConfigPublicKey } from "../pda";
+import { getBankPublicKey } from "../pda";
 import { getTokenProgramId, TokenProgram } from "../types/tokenProgram";
 
 const program = new Program<AnchorLendingExample>(idl as AnchorLendingExample);
@@ -43,16 +43,16 @@ export async function getUpdateAuthorityIx(
 }
 
 /**
- * Create instruction to initialize a new token group
+ * Create instruction to initialize a new pool
  * @param authority Admin authority
- * @param groupId Token group ID
- * @returns Initialize token group instruction
+ * @param poolId Pool ID
+ * @returns Initialize pool instruction
  */
-export async function getInitializeTokenGroupIx(
+export async function getInitializePoolIx(
   authority: PublicKey
 ): Promise<TransactionInstruction> {
   return await program.methods
-    .initializeTokenGroup()
+    .initializePool()
     .accountsPartial({
       authority,
     })
@@ -60,58 +60,49 @@ export async function getInitializeTokenGroupIx(
 }
 
 /**
- * Create instruction to initialize configuration for a token
+ * Create instruction to initialize bank for a token
  * @param authority Admin authority
  * @param mint Token mint address
- * @param groupId Token group ID
- * @returns Initialize token config instruction
+ * @param poolId Pool ID
+ * @returns Initialize bank instruction
  */
-export async function getInitializeTokenConfigIx(
+export async function getInitializeBankIx(
   authority: PublicKey,
   mint: PublicKey,
-  groupId: number,
+  poolId: number,
   tokenProgram: TokenProgram = TokenProgram.TOKEN_PROGRAM
 ): Promise<TransactionInstruction> {
-  const tokenConfigPda = getTokenConfigPublicKey(
-    mint,
-    groupId,
-    program.programId
-  );
+  const bankPda = getBankPublicKey(mint, poolId, program.programId);
   return await program.methods
-    .initializeTokenConfig(groupId)
+    .initializeBank(poolId)
     .accountsPartial({
       authority,
       mint,
-      tokenConfig: tokenConfigPda,
+      bank: bankPda,
       tokenProgram: getTokenProgramId(tokenProgram),
     })
     .instruction();
 }
 
 /**
- * Create instruction to update token config operational status
+ * Create instruction to update bank operational status
  * @param authority Admin authority
  * @param mint Token mint address
  * @param newStatus New operational status to set
- * @returns Update token config status instruction
+ * @returns Update bank status instruction
  */
-export async function getUpdateTokenConfigStatusIx(
+export async function getUpdateBankStatusIx(
   authority: PublicKey,
   mint: PublicKey,
   newStatus: number,
-  groupId: number
+  poolId: number
 ): Promise<TransactionInstruction> {
-  const tokenConfigPda = getTokenConfigPublicKey(
-    mint,
-    groupId,
-    program.programId
-  );
-
+  const bankPda = getBankPublicKey(mint, poolId, program.programId);
   return await program.methods
-    .updateTokenConfigStatus(newStatus)
+    .updateBankStatus(newStatus)
     .accountsPartial({
-      tokenConfig: tokenConfigPda,
       authority,
+      bank: bankPda,
     })
     .instruction();
 }

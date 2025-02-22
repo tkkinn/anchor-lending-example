@@ -61,20 +61,20 @@
       "args": []
     },
     {
-      "name": "initialize_token_config",
+      "name": "initialize_bank",
       "docs": [
-        "Initialize configuration for a new token",
+        "Initialize configuration for a new bank",
         "Can only be called by the admin authority"
       ],
       "discriminator": [
-        60,
-        14,
-        114,
-        86,
-        25,
-        84,
-        93,
-        149
+        217,
+        55,
+        77,
+        45,
+        245,
+        197,
+        75,
+        140
       ],
       "accounts": [
         {
@@ -98,9 +98,9 @@
           }
         },
         {
-          "name": "token_config",
+          "name": "bank",
           "docs": [
-            "The token config account to initialize"
+            "The bank account to initialize"
           ],
           "writable": true
         },
@@ -113,7 +113,7 @@
         {
           "name": "token_account",
           "docs": [
-            "The token account owned by token config PDA"
+            "The token account owned by bank PDA"
           ],
           "writable": true,
           "pda": {
@@ -138,7 +138,7 @@
               },
               {
                 "kind": "account",
-                "path": "token_config"
+                "path": "bank"
               }
             ]
           }
@@ -146,7 +146,7 @@
         {
           "name": "authority",
           "docs": [
-            "The authority that must sign to initialize token config"
+            "The authority that must sign to initialize bank"
           ],
           "writable": true,
           "signer": true,
@@ -173,20 +173,20 @@
       ]
     },
     {
-      "name": "initialize_token_group",
+      "name": "initialize_pool",
       "docs": [
-        "Initialize a new token group",
+        "Initialize a new pool",
         "Can only be called by the admin authority"
       ],
       "discriminator": [
-        87,
-        246,
-        48,
-        126,
-        123,
-        0,
-        229,
-        62
+        95,
+        180,
+        10,
+        172,
+        84,
+        174,
+        232,
+        40
       ],
       "accounts": [
         {
@@ -281,20 +281,20 @@
       "args": []
     },
     {
-      "name": "update_token_config_status",
+      "name": "update_bank_status",
       "docs": [
-        "Update the operational status of a token config",
+        "Update the operational status of a bank",
         "Can only be called by the admin authority"
       ],
       "discriminator": [
-        153,
-        159,
-        241,
-        140,
-        69,
-        10,
-        238,
-        253
+        75,
+        255,
+        49,
+        191,
+        115,
+        239,
+        30,
+        148
       ],
       "accounts": [
         {
@@ -328,9 +328,9 @@
           ]
         },
         {
-          "name": "token_config",
+          "name": "bank",
           "docs": [
-            "The token config account to update"
+            "The bank account to update"
           ],
           "writable": true
         }
@@ -358,16 +358,16 @@
       ]
     },
     {
-      "name": "TokenConfig",
+      "name": "Bank",
       "discriminator": [
-        92,
-        73,
-        255,
-        43,
-        107,
-        51,
-        117,
-        101
+        142,
+        49,
+        166,
+        242,
+        50,
+        66,
+        97,
+        188
       ]
     }
   ],
@@ -399,55 +399,55 @@
       ]
     },
     {
-      "name": "TokenConfigInitialized",
+      "name": "BankInitialized",
       "discriminator": [
-        216,
-        229,
-        55,
-        155,
-        204,
-        69,
-        244,
-        40
+        12,
+        70,
+        239,
+        83,
+        166,
+        159,
+        112,
+        156
       ]
     },
     {
-      "name": "TokenConfigStatusUpdated",
+      "name": "BankStatusUpdated",
       "discriminator": [
+        20,
+        241,
+        184,
+        46,
+        202,
+        162,
+        62,
+        230
+      ]
+    },
+    {
+      "name": "anchor_lending_example::protocol::event::PoolInitialized",
+      "discriminator": [
+        100,
+        118,
+        173,
         87,
-        11,
-        11,
-        85,
-        138,
-        95,
-        183,
-        52
+        12,
+        198,
+        254,
+        229
       ]
     },
     {
-      "name": "anchor_lending_example::protocol::event::TokenGroupInitialized",
+      "name": "anchor_lending_example::protocol::instructions::initialize_pool::PoolInitialized",
       "discriminator": [
-        131,
-        122,
-        251,
-        192,
-        58,
-        116,
-        250,
-        65
-      ]
-    },
-    {
-      "name": "anchor_lending_example::protocol::instructions::initialize_token_group::TokenGroupInitialized",
-      "discriminator": [
-        131,
-        122,
-        251,
-        192,
-        58,
-        116,
-        250,
-        65
+        100,
+        118,
+        173,
+        87,
+        12,
+        198,
+        254,
+        229
       ]
     }
   ],
@@ -489,9 +489,9 @@
             "type": "pubkey"
           },
           {
-            "name": "token_group_count",
+            "name": "pool_count",
             "docs": [
-              "Number of token groups that have been initialized"
+              "Number of pools that have been initialized"
             ],
             "type": "u8"
           }
@@ -556,9 +556,9 @@
       }
     },
     {
-      "name": "TokenConfig",
+      "name": "Bank",
       "docs": [
-        "Token config account data"
+        "Bank account data"
       ],
       "serialization": "bytemuck",
       "repr": {
@@ -575,9 +575,9 @@
             "type": "pubkey"
           },
           {
-            "name": "group_id",
+            "name": "pool_id",
             "docs": [
-              "The token group ID"
+              "The pool ID"
             ],
             "type": "u8"
           },
@@ -599,7 +599,7 @@
       }
     },
     {
-      "name": "TokenConfigInitialized",
+      "name": "BankInitialized",
       "type": {
         "kind": "struct",
         "fields": [
@@ -623,9 +623,9 @@
       }
     },
     {
-      "name": "TokenConfigStatusUpdated",
+      "name": "BankStatusUpdated",
       "docs": [
-        "Event emitted when token config status is updated"
+        "Event emitted when bank status is updated"
       ],
       "type": {
         "kind": "struct",
@@ -640,14 +640,14 @@
           {
             "name": "old_status",
             "docs": [
-              "Previous token status"
+              "Previous bank status"
             ],
             "type": "u8"
           },
           {
             "name": "new_status",
             "docs": [
-              "New token status"
+              "New bank status"
             ],
             "type": "u8"
           }
@@ -655,17 +655,17 @@
       }
     },
     {
-      "name": "anchor_lending_example::protocol::event::TokenGroupInitialized",
+      "name": "anchor_lending_example::protocol::event::PoolInitialized",
       "docs": [
-        "Event emitted when a new token group is initialized"
+        "Event emitted when a new pool is initialized"
       ],
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "group_id",
+            "name": "pool_id",
             "docs": [
-              "The group ID that was initialized"
+              "The pool ID that was initialized"
             ],
             "type": "u8"
           },
@@ -680,12 +680,12 @@
       }
     },
     {
-      "name": "anchor_lending_example::protocol::instructions::initialize_token_group::TokenGroupInitialized",
+      "name": "anchor_lending_example::protocol::instructions::initialize_pool::PoolInitialized",
       "type": {
         "kind": "struct",
         "fields": [
           {
-            "name": "token_group_count",
+            "name": "pool_count",
             "type": "u8"
           }
         ]

@@ -28,8 +28,8 @@ pub fn handle_initialize(ctx: Context<Initialize>) -> Result<()> {
     // Set the authority address
     admin.authority = ctx.accounts.authority.key();
 
-    // Initialize token group count to 0
-    admin.token_group_count = 0;
+    // Initialize pool count to 0
+    admin.pool_count = 0;
 
     msg!("Admin initialized with authority: {}", admin.authority);
 
