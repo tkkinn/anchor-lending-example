@@ -189,32 +189,9 @@ export class BankrunConnection {
     return this as unknown as SolanaConnection;
   }
 
-  async getTokenAccountBalance(
-    publicKey: PublicKey
-  ): Promise<RpcResponseAndContext<TokenAmount>> {
+  async getTokenAccount(publicKey: PublicKey): Promise<Account> {
     const info = await this.getAccountInfo(publicKey);
-    let account;
-    try {
-      account = unpackAccount(publicKey, info);
-    } catch (e) {
-      account = unpackAccount(publicKey, info, TOKEN_2022_PROGRAM_ID);
-    }
-    const mintInfo = await this.getAccountInfo(account.mint);
-    let mint;
-    try {
-      mint = unpackMint(account.mint, mintInfo);
-    } catch (e) {
-      mint = unpackMint(account.mint, mintInfo, TOKEN_2022_PROGRAM_ID);
-    }
-
-    return {
-      context: { slot: Number(await this._banksClient.getSlot()) },
-      value: {
-        amount: account.amount.toString(),
-        decimals: mint.decimals,
-        uiAmount: Number(account.amount / BigInt(10 ** mint.decimals)),
-      },
-    };
+    return unpackAccount(publicKey, info, info.owner);
   }
 
   async getMultipleAccountsInfo(

@@ -1,20 +1,19 @@
+import { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import * as anchor from "@coral-xyz/anchor";
-import idl from "../idl/anchor_lending_example.json";
+import * as idl from "../idl/anchor_lending_example.json";
 import { AnchorLendingExample } from "../types/anchor_lending_example";
-import { Buffer } from "buffer";
 
-const program = new anchor.Program<AnchorLendingExample>(
-  idl as AnchorLendingExample
-);
+const program = new Program<AnchorLendingExample>(idl as AnchorLendingExample);
 
 export class AdminAccount {
   authority: PublicKey;
   poolCount: number;
+  bump: number;
 
-  constructor(authority: PublicKey, poolCount: number) {
-    this.authority = authority;
-    this.poolCount = poolCount;
+  constructor(args: { authority: PublicKey; poolCount: number; bump: number }) {
+    this.authority = args.authority;
+    this.poolCount = args.poolCount;
+    this.bump = args.bump;
   }
 
   static decode(data: Buffer): AdminAccount {

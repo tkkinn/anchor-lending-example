@@ -14,4 +14,8 @@ pub enum AdminError {
     /// Invalid input
     #[msg("Invalid input")]
     InvalidInput,
+
+    /// Numeric overflow occurred
+    #[msg("Numeric overflow occurred")]
+    Overflow,
 }

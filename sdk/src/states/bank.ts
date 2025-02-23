@@ -1,18 +1,19 @@
+import { Program } from "@coral-xyz/anchor";
 import { PublicKey } from "@solana/web3.js";
-import * as anchor from "@coral-xyz/anchor";
-import idl from "../idl/anchor_lending_example.json";
+import * as idl from "../idl/anchor_lending_example.json";
 import { AnchorLendingExample } from "../types/anchor_lending_example";
 
-const program = new anchor.Program<AnchorLendingExample>(
-  idl as AnchorLendingExample
-);
+const program = new Program<AnchorLendingExample>(idl as AnchorLendingExample);
 
 /**
  * Bank operational status
  */
 export enum BankStatus {
+  /** Bank is inactive and cannot be used */
   Inactive = 0,
+  /** Bank is active and can be used for all operations */
   Active = 1,
+  /** Bank is in reduce-only mode - no new positions allowed */
   ReduceOnly = 2,
 }
 
@@ -20,19 +21,27 @@ export enum BankStatus {
  * Represents the on-chain Bank account state
  */
 export class BankAccount {
+  /** The token mint address */
   mint: PublicKey;
-  groupId: number;
+  /** The pool ID */
+  poolId: number;
+  /** The bank ID within the pool */
+  bankId: number;
+  /** The PDA bump seed */
   bump: number;
+  /** Current operational status */
   status: BankStatus;
 
   constructor(args: {
     mint: PublicKey;
-    groupId: number;
+    poolId: number;
+    bankId: number;
     bump: number;
     status: BankStatus;
   }) {
     this.mint = args.mint;
-    this.groupId = args.groupId;
+    this.poolId = args.poolId;
+    this.bankId = args.bankId;
     this.bump = args.bump;
     this.status = args.status;
   }

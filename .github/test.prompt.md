@@ -54,6 +54,8 @@ describe("Admin Function", () => {
     const stateInfo = await connection.getAccountInfo(stateKey);
     const state = StateAccount.decode(stateInfo.data);
     expect(state.authority).toEqual(wallet.publicKey);
+    // get token amount
+    const amount = (await bankrunContextWrapper.connection.getTokenAccount(bankTokenAccount)).amount;
   });
 });
 ```

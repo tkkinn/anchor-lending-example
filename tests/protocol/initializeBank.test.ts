@@ -11,12 +11,18 @@ import {
   getInitializeIx,
   getInitializePoolIx,
   getInitializeBankIx,
+  getPoolPublicKey,
+  AdminAccount,
+  PoolAccount,
+  BankAccount,
+  BankStatus,
+  getBankTokenAccountPublicKey,
+  TokenProgram,
 } from "@/sdk";
 import * as anchor from "@coral-xyz/anchor";
 import { BankrunProvider } from "anchor-bankrun";
 import { BanksClient, ProgramTestContext, startAnchor } from "solana-bankrun";
 import { PublicKey, Keypair, Connection } from "@solana/web3.js";
-import { TokenProgram } from "sdk/src/types/tokenProgram";
 
 describe("Initialize Bank", () => {
   let context: ProgramTestContext;
@@ -29,9 +35,11 @@ describe("Initialize Bank", () => {
   let unauthorized: Keypair;
   let adminKey: PublicKey;
   let bankKey: PublicKey;
+  let poolKey: PublicKey;
 
   const testMint = USDC_MINT;
-  const poolId = 1;
+  const poolId = 0;
+  const bankId = 0;
 
   beforeEach(async () => {
     // Set up testing environment
@@ -61,15 +69,14 @@ describe("Initialize Bank", () => {
     connection = bankrunContextWrapper.connection.toConnection();
 
     adminKey = getAdminPublicKey(PROGRAM_ID);
+    poolKey = getPoolPublicKey(poolId, PROGRAM_ID);
+    bankKey = getBankPublicKey(poolId, bankId, PROGRAM_ID);
 
-    bankKey = getBankPublicKey(testMint, poolId, PROGRAM_ID);
-
-    // Initialize admin
+    // Initialize admin and pool
     const initIx = await getInitializeIx(authority.publicKey);
     await sendTransaction([initIx], connection, authority);
 
-    // Initialize pool
-    const initPoolIx = await getInitializePoolIx(authority.publicKey);
+    const initPoolIx = await getInitializePoolIx(authority.publicKey, poolId);
     await sendTransaction([initPoolIx], connection, authority);
   });
 
@@ -79,9 +86,15 @@ describe("Initialize Bank", () => {
    * 1. Initialize bank with valid inputs
    * 2. Verify bank account created with correct settings
    * 3. Verify token account created
-   * Expected: Bank should be initialized
+   * 4. Verify pool bank count incremented
+   * Expected: Bank and token account initialized correctly
    */
   it("should initialize bank successfully", async () => {
+    // Get initial pool state
+    const poolInfoBefore = await connection.getAccountInfo(poolKey);
+    const poolBefore = PoolAccount.decode(poolInfoBefore.data);
+    const expectedBankId = poolBefore.bankCount;
+
     // Initialize bank
     const ix = await getInitializeBankIx(
       authority.publicKey,
@@ -91,10 +104,59 @@ describe("Initialize Bank", () => {
     );
     await sendTransaction([ix], connection, authority);
 
-    // Verify bank PDA was created
+    // Verify bank account created and initialized correctly
     const bankInfo = await connection.getAccountInfo(bankKey);
-    expect(bankInfo).not.toBeNull();
+    const bank = BankAccount.decode(bankInfo.data);
+    expect(bank.mint).toEqual(testMint);
+    expect(bank.poolId).toEqual(poolId);
+    expect(bank.bankId).toEqual(expectedBankId);
+    expect(bank.status).toEqual(BankStatus.Inactive);
 
-    // TODO: Add bank account data decoding and verification once Bank class is implemented
+    // Verify token account created
+    const tokenAccountKey = getBankTokenAccountPublicKey(bankKey, PROGRAM_ID);
+    const tokenAccountInfo = await connection.getAccountInfo(tokenAccountKey);
+    expect(tokenAccountInfo).not.toBeNull();
+
+    // Verify pool bank count incremented
+    const poolInfoAfter = await connection.getAccountInfo(poolKey);
+    const poolAfter = PoolAccount.decode(poolInfoAfter.data);
+    expect(poolAfter.bankCount).toEqual(poolBefore.bankCount + 1);
+  });
+
+  /**
+   * Test: Unauthorized Bank Initialization
+   * Flow:
+   * 1. Try to initialize bank with unauthorized signer
+   * Expected: Transaction should fail with unauthorized error
+   */
+  it("should fail on unauthorized initialization", async () => {
+    const ix = await getInitializeBankIx(
+      unauthorized.publicKey,
+      testMint,
+      poolId,
+      TokenProgram.TOKEN_PROGRAM
+    );
+    await expect(
+      sendTransaction([ix], connection, unauthorized)
+    ).rejects.toThrow();
+  });
+
+  /**
+   * Test: Invalid Pool ID
+   * Flow:
+   * 1. Try to initialize bank with non-existent pool ID
+   * Expected: Transaction should fail with invalid pool ID error
+   */
+  it("should fail with invalid pool ID", async () => {
+    const invalidPoolId = 99; // Pool that doesn't exist
+    const ix = await getInitializeBankIx(
+      authority.publicKey,
+      testMint,
+      invalidPoolId,
+      TokenProgram.TOKEN_PROGRAM
+    );
+    await expect(
+      sendTransaction([ix], connection, authority)
+    ).rejects.toThrow();
   });
 });

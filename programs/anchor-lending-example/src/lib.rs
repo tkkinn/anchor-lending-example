@@ -1,9 +1,10 @@
 #[macro_use]
-// pub mod utils;
 pub mod protocol;
-// pub mod user;
+pub mod controller;
+pub mod user;
 
 use crate::protocol::*;
+use crate::user::*;
 use anchor_lang::prelude::*;
 
 // Program ID
@@ -43,9 +44,27 @@ pub mod anchor_lending_example {
         protocol::handle_update_bank_status(ctx, new_status)
     }
 
-    // /// Initialize a new user account with unique ID in a specific token group
-    // /// This creates a PDA account for the user that will hold their lending protocol state
-    // pub fn initialize_user(ctx: Context<InitializeUser>, group_id: u8, user_id: u16) -> Result<()> {
-    //     user::handle_initialize_user(ctx, group_id, user_id)
-    // }
+    /// Initialize a new user account with unique ID in a specific token group
+    /// This creates a PDA account for the user that will hold their lending protocol state
+    pub fn initialize_user(ctx: Context<InitializeUser>, pool_id: u8, user_id: u16) -> Result<()> {
+        user::handle_initialize_user(ctx, pool_id, user_id)
+    }
+
+    /// Deposit tokens into a bank
+    /// User must sign the transaction and provide token account with sufficient balance
+    pub fn deposit<'info>(
+        ctx: Context<'_, '_, '_, 'info, Deposit<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        user::handle_deposit(ctx, amount)
+    }
+
+    /// Withdraw tokens from a bank
+    /// User must sign the transaction and have sufficient balance in their user account
+    pub fn withdraw<'info>(
+        ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        user::handle_withdrawal(ctx, amount)
+    }
 }
