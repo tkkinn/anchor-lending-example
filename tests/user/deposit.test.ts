@@ -24,6 +24,7 @@ import {
   UserAccount,
   BankStatus,
   TokenProgram,
+  getUpdateBankStatusIx,
 } from "@/sdk";
 import * as anchor from "@coral-xyz/anchor";
 import { BankrunProvider } from "anchor-bankrun";
@@ -139,6 +140,15 @@ describe("Deposit", () => {
     await sendTransaction([initUserIx], connection, authority);
 
     bankTokenAccount = getBankTokenAccountPublicKey(bankKey, PROGRAM_ID);
+
+    // Set bank to Active status after initialization
+    const updateStatusIx = await getUpdateBankStatusIx(
+      authority.publicKey,
+      BankStatus.Active,
+      poolId,
+      bankId
+    );
+    await sendTransaction([updateStatusIx], connection, authority);
   });
 
   /**
@@ -221,6 +231,68 @@ describe("Deposit", () => {
       wrongTokenAccount,
       wrongMint,
       TokenProgram.TOKEN_2022_PROGRAM
+    );
+    await expect(
+      sendTransaction([ix], connection, authority)
+    ).rejects.toThrow();
+  });
+
+  /**
+   * Test: Deposit with Inactive Bank
+   * Flow:
+   * 1. Set bank status to Inactive
+   * 2. Try to deposit tokens
+   * Expected: Transaction should fail with invalid bank status error
+   */
+  it("should fail with inactive bank", async () => {
+    // Set bank to Inactive status
+    const updateStatusIx = await getUpdateBankStatusIx(
+      authority.publicKey,
+      BankStatus.Inactive,
+      poolId,
+      bankId
+    );
+    await sendTransaction([updateStatusIx], connection, authority);
+
+    // Attempt deposit
+    const ix = await getDepositIx(
+      authority.publicKey,
+      userId,
+      poolId,
+      bankId,
+      depositAmount,
+      userTokenAccount
+    );
+    await expect(
+      sendTransaction([ix], connection, authority)
+    ).rejects.toThrow();
+  });
+
+  /**
+   * Test: Deposit with ReduceOnly Bank
+   * Flow:
+   * 1. Set bank status to ReduceOnly
+   * 2. Try to deposit tokens
+   * Expected: Transaction should fail with invalid bank status error
+   */
+  it("should fail with reduce-only bank", async () => {
+    // Set bank to ReduceOnly status
+    const updateStatusIx = await getUpdateBankStatusIx(
+      authority.publicKey,
+      BankStatus.ReduceOnly,
+      poolId,
+      bankId
+    );
+    await sendTransaction([updateStatusIx], connection, authority);
+
+    // Attempt deposit
+    const ix = await getDepositIx(
+      authority.publicKey,
+      userId,
+      poolId,
+      bankId,
+      depositAmount,
+      userTokenAccount
     );
     await expect(
       sendTransaction([ix], connection, authority)

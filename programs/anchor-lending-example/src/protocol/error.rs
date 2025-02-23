@@ -19,3 +19,15 @@ pub enum AdminError {
     #[msg("Numeric overflow occurred")]
     Overflow,
 }
+
+#[error_code]
+pub enum BankError {
+    #[msg("Bank account not found")]
+    BankNotFound,
+
+    #[msg("Bank is inactive for deposits")]
+    BankInactive,
+
+    #[msg("Bank is not available for withdrawals")]
+    BankNotAvailableForWithdrawal,
+}

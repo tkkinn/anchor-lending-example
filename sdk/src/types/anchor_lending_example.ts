@@ -390,6 +390,40 @@ export type AnchorLendingExample = {
       ];
     },
     {
+      name: "updatePrice";
+      docs: [
+        "Update the price feed for a bank",
+        "Can only be called by the admin authority"
+      ];
+      discriminator: [61, 34, 117, 155, 75, 34, 123, 208];
+      accounts: [
+        {
+          name: "admin";
+          docs: ["The admin account containing authority info"];
+        },
+        {
+          name: "bank";
+          docs: ["The bank account to update price for"];
+          writable: true;
+        },
+        {
+          name: "authority";
+          docs: ["The authority that can update prices"];
+          signer: true;
+        }
+      ];
+      args: [
+        {
+          name: "params";
+          type: {
+            defined: {
+              name: "updatePriceParams";
+            };
+          };
+        }
+      ];
+    },
+    {
       name: "withdraw";
       docs: [
         "Withdraw tokens from a bank",
@@ -496,6 +530,10 @@ export type AnchorLendingExample = {
     {
       name: "bankStatusUpdated";
       discriminator: [20, 241, 184, 46, 202, 162, 62, 230];
+    },
+    {
+      name: "priceUpdateEvent";
+      discriminator: [176, 152, 211, 252, 92, 105, 194, 103];
     },
     {
       name: "userBalanceUpdated";
@@ -642,6 +680,21 @@ export type AnchorLendingExample = {
             name: "status";
             docs: ["Current operational status"];
             type: "u8";
+          },
+          {
+            name: "padding";
+            type: {
+              array: ["u8", 4];
+            };
+          },
+          {
+            name: "priceMessage";
+            docs: ["The price message"];
+            type: {
+              defined: {
+                name: "priceFeedMessage";
+              };
+            };
           }
         ];
       };
@@ -713,6 +766,85 @@ export type AnchorLendingExample = {
       };
     },
     {
+      name: "priceFeedMessage";
+      docs: ["Message containing price feed data"];
+      serialization: "bytemuck";
+      repr: {
+        kind: "c";
+      };
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "emaPrice";
+            docs: ["Exponential moving average price"];
+            type: "u64";
+          },
+          {
+            name: "emaConf";
+            docs: ["EMA confidence interval"];
+            type: "u64";
+          },
+          {
+            name: "price";
+            docs: ["Current price"];
+            type: "u64";
+          },
+          {
+            name: "conf";
+            docs: ["Confidence interval around the price"];
+            type: "u64";
+          },
+          {
+            name: "exponent";
+            docs: ["Price exponent"];
+            type: "i32";
+          },
+          {
+            name: "padding";
+            type: "i32";
+          },
+          {
+            name: "publishTime";
+            docs: ["Timestamp of price update"];
+            type: "i64";
+          }
+        ];
+      };
+    },
+    {
+      name: "priceUpdateEvent";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "bank";
+            type: "pubkey";
+          },
+          {
+            name: "price";
+            type: "u64";
+          },
+          {
+            name: "conf";
+            type: "u64";
+          },
+          {
+            name: "emaPrice";
+            type: "u64";
+          },
+          {
+            name: "emaConf";
+            type: "u64";
+          },
+          {
+            name: "publishTime";
+            type: "i64";
+          }
+        ];
+      };
+    },
+    {
       name: "tokenBalance";
       docs: ["Represents a single token balance entry"];
       serialization: "bytemuck";
@@ -738,6 +870,45 @@ export type AnchorLendingExample = {
             type: {
               array: ["u8", 7];
             };
+          }
+        ];
+      };
+    },
+    {
+      name: "updatePriceParams";
+      docs: ["Parameters for updating price information"];
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "emaPrice";
+            docs: ["Exponential moving average price"];
+            type: "u64";
+          },
+          {
+            name: "emaConf";
+            docs: ["EMA confidence interval"];
+            type: "u64";
+          },
+          {
+            name: "price";
+            docs: ["Current price"];
+            type: "u64";
+          },
+          {
+            name: "conf";
+            docs: ["Confidence interval around the price"];
+            type: "u64";
+          },
+          {
+            name: "exponent";
+            docs: ["Price exponent"];
+            type: "i32";
+          },
+          {
+            name: "publishTime";
+            docs: ["Timestamp of price update"];
+            type: "i64";
           }
         ];
       };

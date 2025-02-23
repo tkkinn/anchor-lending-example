@@ -1,6 +1,9 @@
 use crate::{
     controller::token::TokenInstructionInterface,
-    protocol::{state::Bank, BANK_SEED},
+    protocol::{
+        state::{Bank, BankStatus},
+        BankError, BANK_SEED,
+    },
     user::event::UserBalanceUpdated,
     user::state::User,
 };
@@ -66,21 +69,15 @@ pub fn handle_deposit<'info>(
     let bank = ctx.accounts.bank.load()?;
     let mut user_account = ctx.accounts.user_account.load_mut()?;
 
-    msg!(
-        "Executing deposit of {} tokens for user {}",
-        amount,
-        ctx.accounts.user.key()
+    // Check bank status - only allow deposits when Active
+    require_eq!(
+        bank.status,
+        BankStatus::Active as u8,
+        BankError::BankInactive
     );
 
-    // Get previous balance
     let previous_balance = user_account.find_balance_by_bank_id(bank.bank_id);
-    msg!("Previous balance: {}", previous_balance);
 
-    // Transfer tokens from user to bank
-    msg!(
-        "Initiating token transfer to bank {}",
-        ctx.accounts.bank.key()
-    );
     let token_interface =
         TokenInstructionInterface::load(&ctx.accounts.token_program, ctx.remaining_accounts)?;
 
@@ -90,21 +87,13 @@ pub fn handle_deposit<'info>(
         ctx.accounts.user.to_account_info(),
         amount,
     )?;
-    msg!("Token transfer completed successfully");
 
-    // Update user account balance
-    msg!("Updating user balance for bank_id: {}", bank.bank_id);
     user_account.update_balance(bank.bank_id, amount as i64)?;
 
-    // Get new balance
     let new_balance = user_account.find_balance_by_bank_id(bank.bank_id);
-    msg!("New balance: {}", new_balance);
 
-    // Get current timestamp
     let clock = Clock::get()?;
 
-    // Emit balance update event
-    msg!("Emitting UserBalanceUpdated event");
     emit!(UserBalanceUpdated {
         user: ctx.accounts.user_account.key(),
         token_id: bank.bank_id,
@@ -113,6 +102,11 @@ pub fn handle_deposit<'info>(
         timestamp: clock.unix_timestamp,
     });
 
-    msg!("Deposit completed successfully");
+    msg!(
+        "Deposit completed: amount {} deposited for user {}, new balance: {}",
+        amount,
+        ctx.accounts.user.key(),
+        new_balance
+    );
     Ok(())
 }
