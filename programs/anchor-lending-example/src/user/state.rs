@@ -88,13 +88,28 @@ impl User {
     /// This ensures all non-zero balances are at the front of the array
     fn sort_token_balances(&mut self) {
         self.token_balances.sort_by(|a, b| {
-            if a.bank_id == 0 && b.bank_id == 0 {
-                std::cmp::Ordering::Equal
-            } else if a.bank_id == 0 {
-                std::cmp::Ordering::Greater
-            } else if b.bank_id == 0 {
+            // Case 1: a has non-zero balance and bank_id == 0, put it at the beginning
+            if a.bank_id == 0 && a.balance != 0 && (b.bank_id != 0 || b.balance == 0) {
                 std::cmp::Ordering::Less
-            } else {
+            }
+            // Case 2: b has non-zero balance and bank_id == 0, put it at the beginning
+            else if b.bank_id == 0 && b.balance != 0 && (a.bank_id != 0 || a.balance == 0) {
+                std::cmp::Ordering::Greater
+            }
+            // Case 3: Both have bank_id == 0 and zero balance, treat them as equal
+            else if a.bank_id == 0 && b.bank_id == 0 {
+                std::cmp::Ordering::Equal
+            }
+            // Case 4: a has bank_id == 0, put it at the end
+            else if a.bank_id == 0 {
+                std::cmp::Ordering::Greater
+            }
+            // Case 5: b has bank_id == 0, put it at the end
+            else if b.bank_id == 0 {
+                std::cmp::Ordering::Less
+            }
+            // Default case: sort by bank_id in ascending order
+            else {
                 a.bank_id.cmp(&b.bank_id)
             }
         });
