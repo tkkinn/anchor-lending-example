@@ -182,7 +182,8 @@ describe("Withdraw", () => {
       poolId,
       bankId,
       withdrawAmount,
-      userTokenAccount
+      userTokenAccount,
+      [0]
     );
     await sendTransaction([ix], connection, authority);
 
@@ -223,7 +224,8 @@ describe("Withdraw", () => {
       poolId,
       bankId,
       tooMuchAmount,
-      userTokenAccount
+      userTokenAccount,
+      [0]
     );
 
     await expect(
@@ -266,6 +268,7 @@ describe("Withdraw", () => {
       bankId,
       withdrawAmount,
       wrongTokenAccount,
+      [0],
       wrongMint,
       TokenProgram.TOKEN_2022_PROGRAM
     );
@@ -308,7 +311,8 @@ describe("Withdraw", () => {
       poolId,
       bankId,
       withdrawAmount,
-      unauthorizedTokenAccount
+      unauthorizedTokenAccount,
+      [0]
     );
 
     await expect(
@@ -340,7 +344,8 @@ describe("Withdraw", () => {
       poolId,
       bankId,
       withdrawAmount,
-      userTokenAccount
+      userTokenAccount,
+      [0]
     );
     await expect(
       sendTransaction([ix], connection, authority)
@@ -378,7 +383,8 @@ describe("Withdraw", () => {
       poolId,
       bankId,
       withdrawAmount,
-      userTokenAccount
+      userTokenAccount,
+      [0]
     );
     await expect(
       sendTransaction([ix], connection, authority)

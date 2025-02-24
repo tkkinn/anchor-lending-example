@@ -996,23 +996,16 @@
         "kind": "struct",
         "fields": [
           {
-            "name": "mint",
+            "name": "bank_id",
             "docs": [
-              "The token mint address"
+              "The bank ID within the pool"
             ],
-            "type": "pubkey"
+            "type": "u8"
           },
           {
             "name": "pool_id",
             "docs": [
               "The pool ID"
-            ],
-            "type": "u8"
-          },
-          {
-            "name": "bank_id",
-            "docs": [
-              "The bank ID within the pool"
             ],
             "type": "u8"
           },
@@ -1038,6 +1031,13 @@
                 4
               ]
             }
+          },
+          {
+            "name": "mint",
+            "docs": [
+              "The token mint address"
+            ],
+            "type": "pubkey"
           },
           {
             "name": "price_message",

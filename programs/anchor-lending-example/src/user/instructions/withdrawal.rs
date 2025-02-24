@@ -1,11 +1,10 @@
 use crate::{
-    controller::token::TokenInstructionInterface,
+    controller::{token::TokenInstructionInterface, BankInterface},
     protocol::{
         state::{Bank, BankStatus},
         BankError, BANK_SEED,
     },
-    user::event::UserBalanceUpdated,
-    user::state::User,
+    user::{event::UserBalanceUpdated, state::User},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
@@ -62,8 +61,8 @@ pub struct Withdraw<'info> {
     pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn handle_withdrawal<'info>(
-    ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
+pub fn handle_withdrawal<'c: 'info, 'info>(
+    ctx: Context<'_, '_, 'c, 'info, Withdraw<'info>>,
     amount: u64,
 ) -> Result<()> {
     let bank = ctx.accounts.bank.load()?;
@@ -74,6 +73,21 @@ pub fn handle_withdrawal<'info>(
         bank.status == BankStatus::Active as u8 || bank.status == BankStatus::ReduceOnly as u8,
         BankError::BankNotAvailableForWithdrawal
     );
+
+    // Collect bank IDs from non-zero balances
+    let mut bank_ids: Vec<u8> = user_account
+        .token_balances
+        .iter()
+        .filter(|balance| balance.balance != 0 && balance.bank_id != 0)
+        .map(|balance| balance.bank_id)
+        .collect();
+
+    // Add withdrawal bank ID if not already included
+    if !bank_ids.contains(&bank.bank_id) {
+        bank_ids.push(bank.bank_id);
+    };
+
+    let _bank_interface = BankInterface::load(bank_ids, ctx.remaining_accounts)?;
 
     let previous_balance = user_account.find_balance_by_bank_id(bank.bank_id);
 

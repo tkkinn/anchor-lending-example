@@ -1,6 +1,6 @@
 import { PublicKey, TransactionInstruction } from "@solana/web3.js";
 import * as anchor from "@coral-xyz/anchor";
-import { Program } from "@coral-xyz/anchor";
+import { BN, Program } from "@coral-xyz/anchor";
 import idl from "../idl/anchor_lending_example.json";
 import { AnchorLendingExample } from "../types/anchor_lending_example";
 import {
@@ -147,6 +147,53 @@ export async function getUpdateBankStatusIx(
   const admin = getAdminPublicKey(programId);
   return await program.methods
     .updateBankStatus(newStatus)
+    .accountsPartial({
+      authority,
+      bank,
+      admin,
+    })
+    .instruction();
+}
+
+/**
+ * Parameters for updating price information
+ */
+export interface UpdatePriceParams {
+  /** Exponential moving average price */
+  emaPrice: BN;
+  /** EMA confidence interval */
+  emaConf: BN;
+  /** Current price */
+  price: BN;
+  /** Confidence interval around the price */
+  conf: BN;
+  /** Price exponent */
+  exponent: number;
+  /** Timestamp of price update */
+  publishTime: BN;
+}
+
+/**
+ * Create instruction to update price data for a bank
+ * @param authority Admin authority
+ * @param params Price update parameters containing new price data
+ * @param poolId Pool ID
+ * @param bankId Bank ID within the pool
+ * @param programId Program ID, defaults to the main program ID
+ * @returns Update price instruction
+ */
+export async function getUpdatePriceIx(
+  authority: PublicKey,
+  params: UpdatePriceParams,
+  poolId: number,
+  bankId: number,
+  programId: PublicKey = PROGRAM_ID
+): Promise<TransactionInstruction> {
+  const admin = getAdminPublicKey(programId);
+  const bank = getBankPublicKey(poolId, bankId, programId);
+
+  return await program.methods
+    .updatePrice(params)
     .accountsPartial({
       authority,
       bank,

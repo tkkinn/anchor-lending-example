@@ -657,18 +657,13 @@ export type AnchorLendingExample = {
         kind: "struct";
         fields: [
           {
-            name: "mint";
-            docs: ["The token mint address"];
-            type: "pubkey";
+            name: "bankId";
+            docs: ["The bank ID within the pool"];
+            type: "u8";
           },
           {
             name: "poolId";
             docs: ["The pool ID"];
-            type: "u8";
-          },
-          {
-            name: "bankId";
-            docs: ["The bank ID within the pool"];
             type: "u8";
           },
           {
@@ -686,6 +681,11 @@ export type AnchorLendingExample = {
             type: {
               array: ["u8", 4];
             };
+          },
+          {
+            name: "mint";
+            docs: ["The token mint address"];
+            type: "pubkey";
           },
           {
             name: "priceMessage";

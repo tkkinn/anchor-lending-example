@@ -44,6 +44,12 @@ pub mod anchor_lending_example {
         protocol::handle_update_bank_status(ctx, new_status)
     }
 
+    /// Update the price feed for a bank
+    /// Can only be called by the admin authority
+    pub fn update_price(ctx: Context<UpdatePrice>, params: UpdatePriceParams) -> Result<()> {
+        protocol::handle_update_price(ctx, params)
+    }
+
     /// Initialize a new user account with unique ID in a specific token group
     /// This creates a PDA account for the user that will hold their lending protocol state
     pub fn initialize_user(ctx: Context<InitializeUser>, pool_id: u8, user_id: u16) -> Result<()> {
@@ -61,8 +67,8 @@ pub mod anchor_lending_example {
 
     /// Withdraw tokens from a bank
     /// User must sign the transaction and have sufficient balance in their user account
-    pub fn withdraw<'info>(
-        ctx: Context<'_, '_, '_, 'info, Withdraw<'info>>,
+    pub fn withdraw<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, Withdraw<'info>>,
         amount: u64,
     ) -> Result<()> {
         user::handle_withdrawal(ctx, amount)

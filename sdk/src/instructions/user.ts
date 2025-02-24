@@ -114,6 +114,7 @@ export async function getWithdrawIx(
   bankId: number,
   amount: number,
   userTokenAccount: PublicKey,
+  userBankId: number[],
   mint?: PublicKey,
   tokenProgram: TokenProgram = TokenProgram.TOKEN_PROGRAM,
   programId: PublicKey = PROGRAM_ID
@@ -123,6 +124,16 @@ export async function getWithdrawIx(
   const bankTokenAccount = getBankTokenAccountPublicKey(bank, programId);
 
   let remainingAccounts: AccountMeta[] = [];
+
+  for (const id of userBankId) {
+    const collateralBank = getBankPublicKey(poolId, id, programId);
+    remainingAccounts.push({
+      pubkey: collateralBank,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+
   if (mint) {
     remainingAccounts.push({
       pubkey: mint,

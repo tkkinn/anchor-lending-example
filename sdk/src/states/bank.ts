@@ -18,6 +18,24 @@ export enum BankStatus {
 }
 
 /**
+ * Represents price feed data from oracle
+ */
+export interface PriceFeedMessage {
+  /** Exponential moving average price */
+  emaPrice: bigint;
+  /** EMA confidence interval */
+  emaConf: bigint;
+  /** Current price */
+  price: bigint;
+  /** Confidence interval around the price */
+  conf: bigint;
+  /** Price decimal exponent */
+  exponent: number;
+  /** Timestamp of price update */
+  publishTime: bigint;
+}
+
+/**
  * Represents the on-chain Bank account state
  */
 export class BankAccount {
@@ -31,6 +49,8 @@ export class BankAccount {
   bump: number;
   /** Current operational status */
   status: BankStatus;
+  /** Current price feed data */
+  priceMessage: PriceFeedMessage;
 
   constructor(args: {
     mint: PublicKey;
@@ -38,12 +58,14 @@ export class BankAccount {
     bankId: number;
     bump: number;
     status: BankStatus;
+    priceMessage: PriceFeedMessage;
   }) {
     this.mint = args.mint;
     this.poolId = args.poolId;
     this.bankId = args.bankId;
     this.bump = args.bump;
     this.status = args.status;
+    this.priceMessage = args.priceMessage;
   }
 
   /**

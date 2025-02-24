@@ -45,16 +45,39 @@ pub enum BankStatus {
 #[repr(C)]
 #[derive(Default)]
 pub struct Bank {
-    /// The token mint address
-    pub mint: Pubkey,
-    /// The pool ID
-    pub pool_id: u8,
     /// The bank ID within the pool
     pub bank_id: u8,
+    /// The pool ID
+    pub pool_id: u8,
     /// The PDA bump seed
     pub bump: u8,
     /// Current operational status
     pub status: u8,
+
+    pub padding: [u8; 4],
+    /// The token mint address
+    pub mint: Pubkey,
+    /// The price message
+    pub price_message: PriceFeedMessage,
+}
+
+/// Message containing price feed data
+#[derive(Default)]
+#[zero_copy]
+pub struct PriceFeedMessage {
+    /// Exponential moving average price
+    pub ema_price: u64,
+    /// EMA confidence interval
+    pub ema_conf: u64,
+    /// Current price
+    pub price: u64,
+    /// Confidence interval around the price
+    pub conf: u64,
+    /// Price exponent
+    pub exponent: i32,
+    pub padding: i32,
+    /// Timestamp of price update
+    pub publish_time: i64,
 }
 
 pub const BANK_SEED: &[u8] = b"bank";

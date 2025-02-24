@@ -79,14 +79,16 @@ pub fn handle_initialize_bank(ctx: Context<InitializeBank>, pool_id: u8) -> Resu
     // Initialize bank
     bank.mint = ctx.accounts.mint.key();
     bank.pool_id = pool_id;
-    bank.bank_id = bank_id; // Use sequential bank_id
+    bank.bank_id = bank_id;
     bank.bump = ctx.bumps.bank;
-    bank.status = BankStatus::Inactive as u8; // Initialize as inactive by default
+    bank.status = BankStatus::Inactive as u8;
+
+    // price_message will be initialized with Default values since Bank implements Default
 
     // Emit event
     emit!(BankInitialized {
         mint: ctx.accounts.mint.key(),
-        group_id: pool_id, // Keep event field as is for backwards compatibility
+        group_id: pool_id,
         status: bank.status,
         token_account: ctx.accounts.token_account.key(),
     });
