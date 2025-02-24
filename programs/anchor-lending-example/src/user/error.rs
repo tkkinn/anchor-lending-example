@@ -16,4 +16,8 @@ pub enum UserError {
     InvalidCollateralBalance,
     #[msg("Insufficient collateral")]
     InsufficientCollateral,
+    #[msg("User account is healthy, no need to liquidate")]
+    PositionHealthy,
+    #[msg("Math operation overflow")]
+    MathOverflow,
 }

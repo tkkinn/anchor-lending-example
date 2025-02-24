@@ -77,4 +77,13 @@ pub mod anchor_lending_example {
     ) -> Result<()> {
         user::handle_withdrawal(ctx, amount)
     }
+
+    /// Liquidate an unhealthy position
+    /// Liquidator must provide sufficient tokens to repay the liability
+    pub fn liquidate<'c: 'info, 'info>(
+        ctx: Context<'_, '_, 'c, 'info, Liquidate<'info>>,
+        amount: u64,
+    ) -> Result<()> {
+        user::handle_liquidate(ctx, amount)
+    }
 }

@@ -202,8 +202,16 @@ export type AnchorLendingExample = {
       ];
       args: [
         {
-          name: "groupId";
+          name: "poolId";
           type: "u8";
+        },
+        {
+          name: "params";
+          type: {
+            defined: {
+              name: "bankConfigParams";
+            };
+          };
         }
       ];
     },
@@ -313,6 +321,119 @@ export type AnchorLendingExample = {
         {
           name: "userId";
           type: "u16";
+        }
+      ];
+    },
+    {
+      name: "liquidate";
+      docs: [
+        "Liquidate an unhealthy position",
+        "Liquidator must provide sufficient tokens to repay the liability"
+      ];
+      discriminator: [223, 179, 226, 125, 48, 46, 39, 74];
+      accounts: [
+        {
+          name: "liquidator";
+          docs: ["Liquidator that must sign"];
+          writable: true;
+          signer: true;
+        },
+        {
+          name: "liquidatorCollateralToken";
+          docs: ["Liquidator's token account to receive collateral"];
+          writable: true;
+        },
+        {
+          name: "liquidatorLiabilityToken";
+          docs: ["Liquidator's token account to repay liability"];
+          writable: true;
+        },
+        {
+          name: "userAccount";
+          docs: ["Unhealthy user's account to liquidate"];
+          writable: true;
+        },
+        {
+          name: "collateralBank";
+          docs: ["Bank account for collateral token"];
+          writable: true;
+        },
+        {
+          name: "liabilityBank";
+          docs: ["Bank account for liability token"];
+          writable: true;
+        },
+        {
+          name: "bankCollateralToken";
+          docs: ["Bank's token account for collateral"];
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ];
+              },
+              {
+                kind: "account";
+                path: "collateralBank";
+              }
+            ];
+          };
+        },
+        {
+          name: "bankLiabilityToken";
+          docs: ["Bank's token account for liability"];
+          writable: true;
+          pda: {
+            seeds: [
+              {
+                kind: "const";
+                value: [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  97,
+                  99,
+                  99,
+                  111,
+                  117,
+                  110,
+                  116
+                ];
+              },
+              {
+                kind: "account";
+                path: "liabilityBank";
+              }
+            ];
+          };
+        },
+        {
+          name: "tokenProgram";
+          docs: ["Token program"];
+        }
+      ];
+      args: [
+        {
+          name: "amount";
+          type: "u64";
         }
       ];
     },
@@ -532,10 +653,6 @@ export type AnchorLendingExample = {
       discriminator: [20, 241, 184, 46, 202, 162, 62, 230];
     },
     {
-      name: "calculatedUserValue";
-      discriminator: [157, 125, 189, 162, 177, 178, 107, 24];
-    },
-    {
       name: "priceUpdateEvent";
       discriminator: [176, 152, 211, 252, 92, 105, 194, 103];
     },
@@ -586,6 +703,21 @@ export type AnchorLendingExample = {
       code: 6005;
       name: "invalidCollateralBalance";
       msg: "Invalid collateral balance";
+    },
+    {
+      code: 6006;
+      name: "insufficientCollateral";
+      msg: "Insufficient collateral";
+    },
+    {
+      code: 6007;
+      name: "positionHealthy";
+      msg: "User account is healthy, no need to liquidate";
+    },
+    {
+      code: 6008;
+      name: "mathOverflow";
+      msg: "Math operation overflow";
     }
   ];
   types: [
@@ -694,11 +826,6 @@ export type AnchorLendingExample = {
             type: "u8";
           },
           {
-            name: "bump";
-            docs: ["The PDA bump seed"];
-            type: "u8";
-          },
-          {
             name: "status";
             docs: ["Current operational status"];
             type: "u8";
@@ -709,10 +836,32 @@ export type AnchorLendingExample = {
             type: "u8";
           },
           {
-            name: "padding";
-            type: {
-              array: ["u8", 3];
-            };
+            name: "initialAssetWeight";
+            docs: [
+              "Weight applied to assets for initial collateral ratio calculations"
+            ];
+            type: "u8";
+          },
+          {
+            name: "maintenanceAssetWeight";
+            docs: [
+              "Weight applied to assets for maintenance collateral ratio calculations"
+            ];
+            type: "u8";
+          },
+          {
+            name: "initialLiabilityWeight";
+            docs: [
+              "Weight applied to liabilities for initial borrowing limits"
+            ];
+            type: "u8";
+          },
+          {
+            name: "maintenanceLiabilityWeight";
+            docs: [
+              "Weight applied to liabilities for maintenance requirements"
+            ];
+            type: "u8";
           },
           {
             name: "mint";
@@ -727,6 +876,43 @@ export type AnchorLendingExample = {
                 name: "priceFeedMessage";
               };
             };
+          }
+        ];
+      };
+    },
+    {
+      name: "bankConfigParams";
+      docs: ["Parameters for initializing a new bank"];
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "initialAssetWeight";
+            docs: [
+              "Weight applied to assets for initial collateral ratio calculations"
+            ];
+            type: "u8";
+          },
+          {
+            name: "maintenanceAssetWeight";
+            docs: [
+              "Weight applied to assets for maintenance collateral ratio calculations"
+            ];
+            type: "u8";
+          },
+          {
+            name: "initialLiabilityWeight";
+            docs: [
+              "Weight applied to liabilities for initial borrowing limits"
+            ];
+            type: "u8";
+          },
+          {
+            name: "maintenanceLiabilityWeight";
+            docs: [
+              "Weight applied to liabilities for maintenance requirements"
+            ];
+            type: "u8";
           }
         ];
       };
@@ -775,29 +961,6 @@ export type AnchorLendingExample = {
             name: "newStatus";
             docs: ["New bank status"];
             type: "u8";
-          }
-        ];
-      };
-    },
-    {
-      name: "calculatedUserValue";
-      type: {
-        kind: "struct";
-        fields: [
-          {
-            name: "collateral";
-            docs: ["Total collateral value in USD (6 decimals)"];
-            type: "u128";
-          },
-          {
-            name: "liability";
-            docs: ["Total liability value in USD (6 decimals)"];
-            type: "u128";
-          },
-          {
-            name: "netValue";
-            docs: ["Net value in USD (6 decimals)"];
-            type: "u128";
           }
         ];
       };

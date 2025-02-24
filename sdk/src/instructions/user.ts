@@ -155,3 +155,92 @@ export async function getWithdrawIx(
     .remainingAccounts(remainingAccounts)
     .instruction();
 }
+
+/**
+ * Get the instruction for liquidating an unhealthy position
+ * @param liquidator The liquidator's wallet address
+ * @param unhealthyUser The address of the unhealthy user to liquidate
+ * @param poolId The pool ID that contains both banks
+ * @param collateralBankId The bank ID for collateral token
+ * @param liabilityBankId The bank ID for liability token
+ * @param liabilityAmount The amount of liability token to repay
+ * @param programId The program ID, defaults to PROGRAM_ID
+ * @returns The liquidate instruction
+ */
+export async function getLiquidateIx(
+  liquidator: PublicKey,
+  unhealthyUser: PublicKey,
+  poolId: number,
+  collateralBankId: number,
+  liabilityBankId: number,
+  liabilityAmount: number,
+  liquidatorCollateralTokenAccount: PublicKey,
+  liquidatorLiabilityTokenAccount: PublicKey,
+  userBankId: number[],
+  collateralTokenProgramId: TokenProgram = TokenProgram.TOKEN_PROGRAM,
+  liabilityTokenProgramId: TokenProgram = TokenProgram.TOKEN_PROGRAM,
+  mints?: PublicKey[],
+  programId: PublicKey = PROGRAM_ID
+): Promise<TransactionInstruction> {
+  // Get bank PDAs
+  const collateralBank = getBankPublicKey(poolId, collateralBankId, programId);
+  const liabilityBank = getBankPublicKey(poolId, liabilityBankId, programId);
+
+  // Get bank token account PDAs
+  const bankCollateralToken = getBankTokenAccountPublicKey(
+    collateralBank,
+    programId
+  );
+  const bankLiabilityToken = getBankTokenAccountPublicKey(
+    liabilityBank,
+    programId
+  );
+
+  // Get unhealthy user account PDA
+  const userAccount = unhealthyUser;
+
+  let remainingAccounts: AccountMeta[] = [];
+
+  if (collateralTokenProgramId != liabilityTokenProgramId) {
+    remainingAccounts.push({
+      pubkey: getTokenProgramId(liabilityTokenProgramId),
+      isSigner: false,
+      isWritable: false,
+    });
+  }
+
+  for (const id of userBankId) {
+    const collateralBank = getBankPublicKey(poolId, id, programId);
+    remainingAccounts.push({
+      pubkey: collateralBank,
+      isWritable: false,
+      isSigner: false,
+    });
+  }
+
+  if (mints) {
+    for (const mint of mints) {
+      remainingAccounts.push({
+        pubkey: mint,
+        isWritable: false,
+        isSigner: false,
+      });
+    }
+  }
+
+  return await program.methods
+    .liquidate(new BN(liabilityAmount))
+    .accountsPartial({
+      liquidator,
+      liquidatorCollateralToken: liquidatorCollateralTokenAccount,
+      liquidatorLiabilityToken: liquidatorLiabilityTokenAccount,
+      userAccount,
+      collateralBank,
+      liabilityBank,
+      bankCollateralToken,
+      bankLiabilityToken,
+      tokenProgram: getTokenProgramId(collateralTokenProgramId),
+    })
+    .remainingAccounts(remainingAccounts)
+    .instruction();
+}
