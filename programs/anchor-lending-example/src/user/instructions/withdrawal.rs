@@ -4,7 +4,10 @@ use crate::{
         state::{Bank, BankStatus},
         BankError, BANK_SEED,
     },
-    user::{event::UserBalanceUpdated, state::User},
+    user::{
+        event::UserBalanceUpdated,
+        state::{Direction, User},
+    },
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
@@ -68,28 +71,13 @@ pub fn handle_withdrawal<'c: 'info, 'info>(
     let bank = ctx.accounts.bank.load()?;
     let mut user_account = ctx.accounts.user_account.load_mut()?;
 
-    // Check bank status - allow withdrawals in Active and ReduceOnly states
     require!(
         bank.status == BankStatus::Active as u8 || bank.status == BankStatus::ReduceOnly as u8,
         BankError::BankNotAvailableForWithdrawal
     );
 
-    // Collect bank IDs from non-zero balances
-    let mut bank_ids: Vec<u8> = user_account
-        .token_balances
-        .iter()
-        .filter(|balance| balance.balance != 0 && balance.bank_id != 0)
-        .map(|balance| balance.bank_id)
-        .collect();
-
-    // Add withdrawal bank ID if not already included
-    if !bank_ids.contains(&bank.bank_id) {
-        bank_ids.push(bank.bank_id);
-    };
-
-    let _bank_interface = BankInterface::load(bank_ids, ctx.remaining_accounts)?;
-
     let previous_balance = user_account.find_balance_by_bank_id(bank.bank_id);
+    let previous_asset_type = user_account.get_balance_type_by_bank_id(bank.bank_id);
 
     let bank_seeds = &[
         BANK_SEED,
@@ -109,25 +97,52 @@ pub fn handle_withdrawal<'c: 'info, 'info>(
         bank_seeds,
     )?;
 
-    user_account.update_balance(bank.bank_id, -(amount as i64))?;
+    // Use Direction::Withdrawal to handle balance type conversion automatically
+    user_account.update_balance(bank.bank_id, amount, Direction::Withdrawal)?;
 
-    let new_balance = user_account.find_balance_by_bank_id(bank.bank_id);
+    let final_balance = user_account.find_balance_by_bank_id(bank.bank_id);
+    let new_asset_type = user_account.get_balance_type_by_bank_id(bank.bank_id);
 
     let clock = Clock::get()?;
+
+    let net_value = {
+        // Collect bank IDs from non-zero balances
+        let mut bank_ids: Vec<u8> = user_account
+            .token_balances
+            .iter()
+            .filter(|balance| balance.balance != 0 && balance.bank_id != 0)
+            .map(|balance| balance.bank_id)
+            .collect();
+
+        // Add withdrawal bank ID if not already included
+        if !bank_ids.contains(&bank.bank_id) {
+            bank_ids.push(bank.bank_id);
+        };
+
+        let bank_interface = BankInterface::load(bank_ids, ctx.remaining_accounts)?;
+
+        // Calculate total values
+        bank_interface.calculate_total_value(user_account.token_balances)?
+    };
+
+    msg!("User total value after withdrawal: Net={}", net_value);
 
     emit!(UserBalanceUpdated {
         user: ctx.accounts.user_account.key(),
         token_id: bank.bank_id,
-        previous_balance: previous_balance as u64,
-        new_balance: new_balance as u64,
+        previous_balance: previous_balance.unsigned_abs(),
+        previous_asset_type,
+        new_balance: final_balance.unsigned_abs(),
+        new_asset_type,
         timestamp: clock.unix_timestamp,
     });
 
     msg!(
-        "Withdrawal completed: amount {} withdrawn for user {}, new balance: {}",
+        "Withdrawal completed: amount {} withdrawn for user {}, new balance: {} ({:?})",
         amount,
         ctx.accounts.user.key(),
-        new_balance
+        final_balance,
+        new_asset_type
     );
     Ok(())
 }

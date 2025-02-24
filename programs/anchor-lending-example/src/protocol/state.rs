@@ -53,8 +53,10 @@ pub struct Bank {
     pub bump: u8,
     /// Current operational status
     pub status: u8,
+    /// The decimal places of the token mint
+    pub decimals: u8,
 
-    pub padding: [u8; 4],
+    pub padding: [u8; 3],
     /// The token mint address
     pub mint: Pubkey,
     /// The price message

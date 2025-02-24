@@ -12,4 +12,6 @@ pub enum UserError {
     MaxTokenTypes,
     #[msg("Pool not found")]
     PoolNotFound,
+    #[msg("Invalid collateral balance")]
+    InvalidCollateralBalance,
 }

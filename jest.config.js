@@ -5,7 +5,7 @@ module.exports = {
     "^.+.tsx?$": ["ts-jest", {}],
   },
   testTimeout: 10000,
-  maxWorkers: 1,
+  maxWorkers: 8,
   verbose: false,
   moduleNameMapper: {
     "@/helpers": "<rootDir>/tests/helpers",

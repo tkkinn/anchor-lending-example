@@ -78,6 +78,7 @@ pub fn handle_initialize_bank(ctx: Context<InitializeBank>, pool_id: u8) -> Resu
 
     // Initialize bank
     bank.mint = ctx.accounts.mint.key();
+    bank.decimals = ctx.accounts.mint.decimals;
     bank.pool_id = pool_id;
     bank.bank_id = bank_id;
     bank.bump = ctx.bumps.bank;
@@ -94,10 +95,11 @@ pub fn handle_initialize_bank(ctx: Context<InitializeBank>, pool_id: u8) -> Resu
     });
 
     msg!(
-        "Initialized bank #{} for mint: {:?}, pool: {}, status: {:?}, token account: {:?}",
+        "Initialized bank #{} for mint: {:?}, pool: {}, decimals: {}, status: {:?}, token account: {:?}",
         bank_id,
         ctx.accounts.mint.key(),
         pool_id,
+        bank.decimals,
         bank.status,
         ctx.accounts.token_account.key()
     );

@@ -5,7 +5,7 @@ use crate::{
         BankError, BANK_SEED,
     },
     user::event::UserBalanceUpdated,
-    user::state::User,
+    user::state::{Direction, User},
 };
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{TokenAccount, TokenInterface};
@@ -77,6 +77,7 @@ pub fn handle_deposit<'info>(
     );
 
     let previous_balance = user_account.find_balance_by_bank_id(bank.bank_id);
+    let previous_asset_type = user_account.get_balance_type_by_bank_id(bank.bank_id);
 
     let token_interface =
         TokenInstructionInterface::load(&ctx.accounts.token_program, ctx.remaining_accounts)?;
@@ -88,25 +89,30 @@ pub fn handle_deposit<'info>(
         amount,
     )?;
 
-    user_account.update_balance(bank.bank_id, amount as i64)?;
+    // Use Direction::Deposit for adding collateral
+    user_account.update_balance(bank.bank_id, amount, Direction::Deposit)?;
 
     let new_balance = user_account.find_balance_by_bank_id(bank.bank_id);
+    let new_asset_type = user_account.get_balance_type_by_bank_id(bank.bank_id);
 
     let clock = Clock::get()?;
 
     emit!(UserBalanceUpdated {
         user: ctx.accounts.user_account.key(),
         token_id: bank.bank_id,
-        previous_balance: previous_balance as u64,
-        new_balance: new_balance as u64,
+        previous_balance: previous_balance.unsigned_abs(), // Convert to u64 for event
+        previous_asset_type,
+        new_balance: new_balance.unsigned_abs(), // Convert to u64 for event
+        new_asset_type,
         timestamp: clock.unix_timestamp,
     });
 
     msg!(
-        "Deposit completed: amount {} deposited for user {}, new balance: {}",
+        "Deposit completed: amount {} deposited for user {}, new balance: {} ({:?})",
         amount,
         ctx.accounts.user.key(),
-        new_balance
+        new_balance,
+        new_asset_type
     );
     Ok(())
 }

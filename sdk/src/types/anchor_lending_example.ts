@@ -532,6 +532,10 @@ export type AnchorLendingExample = {
       discriminator: [20, 241, 184, 46, 202, 162, 62, 230];
     },
     {
+      name: "calculatedUserValue";
+      discriminator: [157, 125, 189, 162, 177, 178, 107, 24];
+    },
+    {
       name: "priceUpdateEvent";
       discriminator: [176, 152, 211, 252, 92, 105, 194, 103];
     },
@@ -577,6 +581,11 @@ export type AnchorLendingExample = {
       code: 6004;
       name: "poolNotFound";
       msg: "Pool not found";
+    },
+    {
+      code: 6005;
+      name: "invalidCollateralBalance";
+      msg: "Invalid collateral balance";
     }
   ];
   types: [
@@ -647,6 +656,24 @@ export type AnchorLendingExample = {
       };
     },
     {
+      name: "balanceType";
+      docs: ["Type of balance for a token position"];
+      repr: {
+        kind: "rust";
+      };
+      type: {
+        kind: "enum";
+        variants: [
+          {
+            name: "collateral";
+          },
+          {
+            name: "liability";
+          }
+        ];
+      };
+    },
+    {
       name: "bank";
       docs: ["Bank account data"];
       serialization: "bytemuck";
@@ -677,9 +704,14 @@ export type AnchorLendingExample = {
             type: "u8";
           },
           {
+            name: "decimals";
+            docs: ["The decimal places of the token mint"];
+            type: "u8";
+          },
+          {
             name: "padding";
             type: {
-              array: ["u8", 4];
+              array: ["u8", 3];
             };
           },
           {
@@ -743,6 +775,29 @@ export type AnchorLendingExample = {
             name: "newStatus";
             docs: ["New bank status"];
             type: "u8";
+          }
+        ];
+      };
+    },
+    {
+      name: "calculatedUserValue";
+      type: {
+        kind: "struct";
+        fields: [
+          {
+            name: "collateral";
+            docs: ["Total collateral value in USD (6 decimals)"];
+            type: "u128";
+          },
+          {
+            name: "liability";
+            docs: ["Total liability value in USD (6 decimals)"];
+            type: "u128";
+          },
+          {
+            name: "netValue";
+            docs: ["Net value in USD (6 decimals)"];
+            type: "u128";
           }
         ];
       };
@@ -856,8 +911,11 @@ export type AnchorLendingExample = {
         fields: [
           {
             name: "balance";
-            docs: ["Balance amount (can be negative)"];
-            type: "i64";
+            docs: [
+              "Balance amount in token's native units",
+              "Always positive - use balance_type to determine if liability"
+            ];
+            type: "u64";
           },
           {
             name: "bankId";
@@ -865,10 +923,15 @@ export type AnchorLendingExample = {
             type: "u8";
           },
           {
+            name: "balanceType";
+            docs: ["Type of balance (collateral or liability)"];
+            type: "u8";
+          },
+          {
             name: "padding";
             docs: ["Padding for memory alignment"];
             type: {
-              array: ["u8", 7];
+              array: ["u8", 6];
             };
           }
         ];
@@ -992,9 +1055,27 @@ export type AnchorLendingExample = {
             type: "u64";
           },
           {
+            name: "previousAssetType";
+            docs: ["Previous asset type (Collateral/Liability)"];
+            type: {
+              defined: {
+                name: "balanceType";
+              };
+            };
+          },
+          {
             name: "newBalance";
             docs: ["New balance"];
             type: "u64";
+          },
+          {
+            name: "newAssetType";
+            docs: ["New asset type (Collateral/Liability)"];
+            type: {
+              defined: {
+                name: "balanceType";
+              };
+            };
           },
           {
             name: "timestamp";

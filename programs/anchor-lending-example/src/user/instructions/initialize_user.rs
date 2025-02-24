@@ -1,6 +1,6 @@
 use crate::{
     protocol::{Admin, ADMIN_SEED},
-    user::{TokenBalance, User, UserError, UserInitialized},
+    user::{state::BalanceType, TokenBalance, User, UserError, UserInitialized},
 };
 use anchor_lang::prelude::*;
 
@@ -45,15 +45,20 @@ pub fn handle_initialize_user(
     let admin = ctx.accounts.admin.load()?;
     require_gte!(admin.pool_count, pool_id, UserError::PoolNotFound);
 
-    // Initialize user account
+    // Initialize user account with default collateral balance type
     let mut user = ctx.accounts.user.load_init()?;
     user.authority = ctx.accounts.authority.key();
     user.id = user_id;
     user.pool_id = pool_id;
     user.bump = ctx.bumps.user;
-    user.token_balances = [TokenBalance::default(); 16];
 
-    // Log initialization
+    // Initialize token balances with Collateral type directly
+    let default_balance = TokenBalance {
+        balance_type: BalanceType::Collateral as u8,
+        ..TokenBalance::default()
+    };
+    user.token_balances = [default_balance; 16];
+
     msg!(
         "User account initialized with ID {} in pool {} for authority: {}",
         user_id,
@@ -61,7 +66,6 @@ pub fn handle_initialize_user(
         ctx.accounts.authority.key()
     );
 
-    // Emit user initialized event
     emit!(UserInitialized {
         user: ctx.accounts.user.key(),
         authority: ctx.accounts.authority.key(),
