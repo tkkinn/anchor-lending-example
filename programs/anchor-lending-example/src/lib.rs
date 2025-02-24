@@ -34,8 +34,12 @@ pub mod anchor_lending_example {
 
     /// Initialize configuration for a new bank
     /// Can only be called by the admin authority
-    pub fn initialize_bank(ctx: Context<InitializeBank>, group_id: u8) -> Result<()> {
-        protocol::handle_initialize_bank(ctx, group_id)
+    pub fn initialize_bank(
+        ctx: Context<InitializeBank>,
+        pool_id: u8,
+        params: BankConfigParams,
+    ) -> Result<()> {
+        protocol::handle_initialize_bank(ctx, pool_id, params)
     }
 
     /// Update the operational status of a bank

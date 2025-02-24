@@ -49,14 +49,20 @@ pub struct Bank {
     pub bank_id: u8,
     /// The pool ID
     pub pool_id: u8,
-    /// The PDA bump seed
-    pub bump: u8,
     /// Current operational status
     pub status: u8,
     /// The decimal places of the token mint
     pub decimals: u8,
 
-    pub padding: [u8; 3],
+    /// Weight applied to assets for initial collateral ratio calculations
+    pub initial_asset_weight: u8,
+    /// Weight applied to assets for maintenance collateral ratio calculations
+    pub maintenance_asset_weight: u8,
+    /// Weight applied to liabilities for initial borrowing limits
+    pub initial_liability_weight: u8,
+    /// Weight applied to liabilities for maintenance requirements
+    pub maintenance_liability_weight: u8,
+
     /// The token mint address
     pub mint: Pubkey,
     /// The price message

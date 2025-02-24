@@ -17,16 +17,8 @@ pub enum BankError {
     LiabilityOverflow,
     #[msg("Math overflow in final net value calculation")]
     NetValueOverflow,
-}
-
-#[event]
-pub struct CalculatedUserValue {
-    /// Total collateral value in USD (6 decimals)
-    pub collateral: u128,
-    /// Total liability value in USD (6 decimals)
-    pub liability: u128,
-    /// Net value in USD (6 decimals)
-    pub net_value: u128,
+    #[msg("Math overflow in weight calculation")]
+    WeightOverflow,
 }
 
 pub struct BankInterface<'a> {
@@ -84,6 +76,47 @@ impl<'a> BankInterface<'a> {
         Ok(bank_interface)
     }
 
+    fn calculate_sum(
+        &self,
+        token_balances: &[TokenBalance; 16],
+        required_type: BalanceType,
+        weight_selector: Option<fn(&Bank) -> u8>,
+        overflow_error: BankError,
+    ) -> Result<u128> {
+        let mut total: u128 = 0;
+        for balance in token_balances.iter() {
+            if balance.balance_type != required_type as u8
+                || balance.balance == 0
+                || balance.bank_id == 0
+            {
+                continue;
+            }
+            let bank = self
+                .banks
+                .iter()
+                .find(|(id, _)| *id == balance.bank_id)
+                .ok_or(error!(BankError::BankNotFound))?
+                .1
+                .load()?;
+            let usd_value =
+                calculate_token_value(balance.balance, bank.decimals, &bank.price_message)?;
+            let final_value = if let Some(weight_fn) = weight_selector {
+                let w = weight_fn(&bank) as u128;
+                (usd_value as u128)
+                    .checked_mul(w)
+                    .ok_or(error!(BankError::WeightOverflow))?
+                    .checked_div(100)
+                    .ok_or(error!(BankError::WeightOverflow))?
+            } else {
+                usd_value as u128
+            };
+            total = total
+                .checked_add(final_value)
+                .ok_or(error!(overflow_error))?;
+        }
+        Ok(total)
+    }
+
     /// Calculates the total collateral value (sum of collateral balances)
     /// Returns the sum in USD with 6 decimal places precision
     ///
@@ -100,44 +133,12 @@ impl<'a> BankInterface<'a> {
         &self,
         token_balances: &[TokenBalance; 16],
     ) -> Result<u128> {
-        let mut total: u128 = 0;
-
-        for balance in token_balances.iter() {
-            // Skip non-collateral balances or empty slots
-            if balance.balance_type != BalanceType::Collateral as u8
-                || balance.balance == 0
-                || balance.bank_id == 0
-            {
-                continue;
-            }
-
-            // Find corresponding bank
-            let bank = self
-                .banks
-                .iter()
-                .find(|(id, _)| *id == balance.bank_id)
-                .ok_or(error!(BankError::BankNotFound))?
-                .1
-                .load()?;
-
-            // Calculate USD value for this collateral balance
-            let usd_value =
-                calculate_token_value(balance.balance, bank.decimals, &bank.price_message)?;
-
-            // Add to total collateral value
-            total = total
-                .checked_add(usd_value as u128)
-                .ok_or(error!(BankError::CollateralOverflow))?;
-
-            msg!(
-                "Added collateral value {} for bank {}",
-                usd_value,
-                bank.bank_id
-            );
-        }
-
-        msg!("Total collateral value: {}", total);
-        Ok(total)
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Collateral,
+            None,
+            BankError::CollateralOverflow,
+        )
     }
 
     /// Calculates the total liability value (sum of liability balances)
@@ -153,44 +154,12 @@ impl<'a> BankInterface<'a> {
     ///   - Required bank not found
     ///   - Math overflow in calculations
     fn calculate_total_liability_value(&self, token_balances: &[TokenBalance; 16]) -> Result<u128> {
-        let mut total: u128 = 0;
-
-        for balance in token_balances.iter() {
-            // Skip non-liability balances or empty slots
-            if balance.balance_type != BalanceType::Liability as u8
-                || balance.balance == 0
-                || balance.bank_id == 0
-            {
-                continue;
-            }
-
-            // Find corresponding bank
-            let bank = self
-                .banks
-                .iter()
-                .find(|(id, _)| *id == balance.bank_id)
-                .ok_or(error!(BankError::BankNotFound))?
-                .1
-                .load()?;
-
-            // Calculate USD value for this liability balance
-            let usd_value =
-                calculate_token_value(balance.balance, bank.decimals, &bank.price_message)?;
-
-            // Add to total liability value
-            total = total
-                .checked_add(usd_value as u128)
-                .ok_or(error!(BankError::LiabilityOverflow))?;
-
-            msg!(
-                "Added liability value {} for bank {}",
-                usd_value,
-                bank.bank_id
-            );
-        }
-
-        msg!("Total liability value: {}", total);
-        Ok(total)
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Liability,
+            None,
+            BankError::LiabilityOverflow,
+        )
     }
 
     /// Calculates the net value (total collateral minus total liability)
@@ -218,29 +187,155 @@ impl<'a> BankInterface<'a> {
 
         // Ensure collateral covers liability
         if collateral < liability {
-            msg!(
-                "Insufficient collateral ({}) to cover liability ({})",
-                collateral,
-                liability
-            );
             return Err(error!(BankError::NetValueOverflow));
         }
 
         // Calculate net value (guaranteed no underflow due to above check)
         let net_value = collateral - liability;
-        msg!(
-            "Net value calculation: {} - {} = {}",
-            collateral,
-            liability,
-            net_value
-        );
-
-        emit!(CalculatedUserValue {
-            collateral,
-            liability,
-            net_value
-        });
 
         Ok(net_value)
+    }
+
+    /// Calculates the total collateral value with Initial Asset Weight applied
+    /// Returns the weighted sum in USD with 6 decimal places precision
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<u128>` - Total weighted collateral value in USD (6 decimals) or error if:
+    ///   - Required bank not found
+    ///   - Math overflow in calculations
+    ///   - Weight multiplication overflow
+    pub fn calculate_total_weighted_collateral_value(
+        &self,
+        token_balances: &[TokenBalance; 16],
+    ) -> Result<u128> {
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Collateral,
+            Some(|b: &Bank| b.initial_asset_weight),
+            BankError::CollateralOverflow,
+        )
+    }
+
+    /// Calculates the total liability value with Initial Liability Weight applied
+    /// Returns the weighted sum in USD with 6 decimal places precision
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<u128>` - Total weighted liability value in USD (6 decimals) or error if:
+    ///   - Required bank not found
+    ///   - Math overflow in calculations
+    ///   - Weight multiplication overflow
+    pub fn calculate_total_weighted_liability_value(
+        &self,
+        token_balances: &[TokenBalance; 16],
+    ) -> Result<u128> {
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Liability,
+            Some(|b: &Bank| b.initial_liability_weight),
+            BankError::LiabilityOverflow,
+        )
+    }
+
+    /// Calculates both weighted collateral and liability values
+    /// Returns (weighted_collateral, weighted_liability) tuple
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(u128, u128)>` - Tuple of weighted collateral and liability values in USD (6 decimals)
+    pub fn calculate_total_weighted_values(
+        &self,
+        token_balances: [TokenBalance; 16],
+    ) -> Result<(u128, u128)> {
+        let weighted_collateral =
+            self.calculate_total_weighted_collateral_value(&token_balances)?;
+        let weighted_liability = self.calculate_total_weighted_liability_value(&token_balances)?;
+
+        Ok((weighted_collateral, weighted_liability))
+    }
+
+    /// Calculates the total collateral value with Maintenance Asset Weight applied
+    /// Returns the weighted sum in USD with 6 decimal places precision
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<u128>` - Total weighted collateral value in USD (6 decimals) or error if:
+    ///   - Required bank not found
+    ///   - Math overflow in calculations
+    ///   - Weight multiplication overflow
+    pub fn calculate_total_maintenance_collateral_value(
+        &self,
+        token_balances: &[TokenBalance; 16],
+    ) -> Result<u128> {
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Collateral,
+            Some(|b: &Bank| b.maintenance_asset_weight),
+            BankError::CollateralOverflow,
+        )
+    }
+
+    /// Calculates the total liability value with Maintenance Liability Weight applied
+    /// Returns the weighted sum in USD with 6 decimal places precision
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<u128>` - Total weighted liability value in USD (6 decimals) or error if:
+    ///   - Required bank not found
+    ///   - Math overflow in calculations
+    ///   - Weight multiplication overflow
+    pub fn calculate_total_maintenance_liability_value(
+        &self,
+        token_balances: &[TokenBalance; 16],
+    ) -> Result<u128> {
+        self.calculate_sum(
+            token_balances,
+            BalanceType::Liability,
+            Some(|b: &Bank| b.maintenance_liability_weight),
+            BankError::LiabilityOverflow,
+        )
+    }
+
+    /// Calculates both maintenance weighted collateral and liability values
+    /// Returns (weighted_collateral, weighted_liability) tuple
+    ///
+    /// # Arguments
+    ///
+    /// * `token_balances` - Array of TokenBalance containing bank IDs and amounts
+    ///
+    /// # Returns
+    ///
+    /// * `Result<(u128, u128)>` - Tuple of maintenance weighted collateral and liability values in USD (6 decimals)
+    pub fn calculate_total_maintenance_values(
+        &self,
+        token_balances: [TokenBalance; 16],
+    ) -> Result<(u128, u128)> {
+        let maintenance_collateral =
+            self.calculate_total_maintenance_collateral_value(&token_balances)?;
+        let maintenance_liability =
+            self.calculate_total_maintenance_liability_value(&token_balances)?;
+
+        Ok((maintenance_collateral, maintenance_liability))
     }
 }

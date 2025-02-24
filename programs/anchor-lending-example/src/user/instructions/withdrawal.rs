@@ -7,6 +7,7 @@ use crate::{
     user::{
         event::UserBalanceUpdated,
         state::{Direction, User},
+        UserError,
     },
 };
 use anchor_lang::prelude::*;
@@ -56,7 +57,7 @@ pub struct Withdraw<'info> {
             &[bank.load()?.pool_id][..],
             &[bank.load()?.bank_id][..],
         ],
-        bump = bank.load()?.bump,
+        bump,
     )]
     pub bank: AccountLoader<'info, Bank>,
 
@@ -83,7 +84,7 @@ pub fn handle_withdrawal<'c: 'info, 'info>(
         BANK_SEED,
         &[bank.pool_id][..],
         &[bank.bank_id][..],
-        &[bank.bump][..],
+        &[ctx.bumps.bank][..],
     ];
 
     let token_interface =
@@ -105,7 +106,7 @@ pub fn handle_withdrawal<'c: 'info, 'info>(
 
     let clock = Clock::get()?;
 
-    let net_value = {
+    let (weighted_collateral, weighted_liability) = {
         // Collect bank IDs from non-zero balances
         let mut bank_ids: Vec<u8> = user_account
             .token_balances
@@ -122,10 +123,14 @@ pub fn handle_withdrawal<'c: 'info, 'info>(
         let bank_interface = BankInterface::load(bank_ids, ctx.remaining_accounts)?;
 
         // Calculate total values
-        bank_interface.calculate_total_value(user_account.token_balances)?
+        bank_interface.calculate_total_weighted_values(user_account.token_balances)?
     };
 
-    msg!("User total value after withdrawal: Net={}", net_value);
+    require_gte!(
+        weighted_collateral,
+        weighted_liability,
+        UserError::InsufficientCollateral
+    );
 
     emit!(UserBalanceUpdated {
         user: ctx.accounts.user_account.key(),

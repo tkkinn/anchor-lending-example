@@ -2,6 +2,19 @@ use crate::protocol::{event::BankInitialized, state::*, AdminError};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
+/// Parameters for initializing a new bank
+#[derive(AnchorSerialize, AnchorDeserialize, Clone, Debug)]
+pub struct BankConfigParams {
+    /// Weight applied to assets for initial collateral ratio calculations
+    pub initial_asset_weight: u8,
+    /// Weight applied to assets for maintenance collateral ratio calculations  
+    pub maintenance_asset_weight: u8,
+    /// Weight applied to liabilities for initial borrowing limits
+    pub initial_liability_weight: u8,
+    /// Weight applied to liabilities for maintenance requirements
+    pub maintenance_liability_weight: u8,
+}
+
 #[derive(Accounts)]
 #[instruction(pool_id: u8)]
 pub struct InitializeBank<'info> {
@@ -62,7 +75,11 @@ pub struct InitializeBank<'info> {
     pub system_program: Program<'info, System>,
 }
 
-pub fn handle_initialize_bank(ctx: Context<InitializeBank>, pool_id: u8) -> Result<()> {
+pub fn handle_initialize_bank(
+    ctx: Context<InitializeBank>,
+    pool_id: u8,
+    params: BankConfigParams,
+) -> Result<()> {
     let admin = ctx.accounts.admin.load()?;
 
     // Verify pool_id exists
@@ -81,10 +98,13 @@ pub fn handle_initialize_bank(ctx: Context<InitializeBank>, pool_id: u8) -> Resu
     bank.decimals = ctx.accounts.mint.decimals;
     bank.pool_id = pool_id;
     bank.bank_id = bank_id;
-    bank.bump = ctx.bumps.bank;
     bank.status = BankStatus::Inactive as u8;
 
-    // price_message will be initialized with Default values since Bank implements Default
+    // Set bank weights
+    bank.initial_asset_weight = params.initial_asset_weight;
+    bank.maintenance_asset_weight = params.maintenance_asset_weight;
+    bank.initial_liability_weight = params.initial_liability_weight;
+    bank.maintenance_liability_weight = params.maintenance_liability_weight;
 
     // Emit event
     emit!(BankInitialized {

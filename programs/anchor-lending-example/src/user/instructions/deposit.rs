@@ -54,7 +54,7 @@ pub struct Deposit<'info> {
             &[bank.load()?.pool_id][..],
             &[bank.load()?.bank_id][..],
         ],
-        bump = bank.load()?.bump,
+        bump,
     )]
     pub bank: AccountLoader<'info, Bank>,
 

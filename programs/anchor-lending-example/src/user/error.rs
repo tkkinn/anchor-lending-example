@@ -14,4 +14,6 @@ pub enum UserError {
     PoolNotFound,
     #[msg("Invalid collateral balance")]
     InvalidCollateralBalance,
+    #[msg("Insufficient collateral")]
+    InsufficientCollateral,
 }
